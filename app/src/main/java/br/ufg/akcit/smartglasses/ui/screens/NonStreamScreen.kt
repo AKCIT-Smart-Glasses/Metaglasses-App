@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -227,6 +228,10 @@ fun NonStreamScreen(
                 onClick = { viewModel.navigateToStreaming(onRequestWearablesPermission) },
                 enabled = uiState.hasActiveDevice && !isUpdateRequired,
             )
+
+            Button(onClick = { navController.navigate("features") }) {
+                Text("Experimental Features")
+            }
         }
 
         // Getting Started Sheet

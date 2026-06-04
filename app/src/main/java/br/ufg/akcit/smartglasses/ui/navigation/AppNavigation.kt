@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import br.ufg.akcit.smartglasses.ui.screens.ExperimentalFeaturesScreen
 import br.ufg.akcit.smartglasses.ui.screens.NonStreamScreen
 import br.ufg.akcit.smartglasses.wearables.WearablesViewModel
 import com.meta.wearable.dat.core.types.Permission
@@ -22,6 +23,12 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onRequestWearablesPermission = onRequestWearablesPermission,
                 navController = navController
+            )
+        }
+        composable("features") {
+            ExperimentalFeaturesScreen(
+                navController = navController,
+                viewModel = viewModel
             )
         }
     }
