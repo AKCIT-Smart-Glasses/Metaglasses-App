@@ -207,6 +207,7 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   override fun onCleared() {
     super.onCleared()
     // Cancel all device monitoring jobs when ViewModel is cleared
+    audioRecorder.release()
     deviceMonitoringJobs.values.forEach { it.cancel() }
     deviceMonitoringJobs.clear()
     deviceSelectorJob?.cancel()
@@ -216,5 +217,23 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
     val isRequired =
         deviceCompatibility.values.any { it == DeviceCompatibility.DEVICE_UPDATE_REQUIRED }
     _uiState.update { it.copy(isFirmwareUpdateRequired = isRequired) }
+  }
+
+  private val audioRecorder = AudioRecorderManager(application)
+
+  fun startAudioRecording() {
+    if (_uiState.value.isRecordingAudio) return
+    audioRecorder.startRecording()
+    _uiState.update { it.copy(isRecordingAudio = true) }
+  }
+
+  fun stopAudioRecording() {
+    val file = audioRecorder.stopRecording()
+    _uiState.update {
+      it.copy(
+        isRecordingAudio = false,
+        lastAudioRecordingPath = file?.absolutePath,
+      )
+    }
   }
 }

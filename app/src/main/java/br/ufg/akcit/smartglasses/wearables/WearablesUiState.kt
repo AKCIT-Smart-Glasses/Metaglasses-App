@@ -28,6 +28,8 @@ data class WearablesUiState(
     val isDatAppUpdateRequired: Boolean = false,
     val hasActiveDevice: Boolean = false,
     val canRegister: Boolean = false,
+    val isRecordingAudio: Boolean = false,
+    val lastAudioRecordingPath: String? = null,
 ) {
   val isRegistered: Boolean =
       registrationState == RegistrationState.REGISTERED ||
