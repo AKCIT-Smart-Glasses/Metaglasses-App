@@ -44,6 +44,8 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   val deviceSelector: DeviceSelector by lazy { AutoDeviceSelector() }
   private var deviceSelectorJob: Job? = null
 
+  private val audioPlayer = AudioPlayerManager()
+
   private var monitoringStarted = false
   private val deviceMonitoringJobs = mutableMapOf<DeviceIdentifier, Job>()
   private val deviceCompatibility = mutableMapOf<DeviceIdentifier, DeviceCompatibility>()
@@ -207,6 +209,7 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   override fun onCleared() {
     super.onCleared()
     // Cancel all device monitoring jobs when ViewModel is cleared
+    audioPlayer.release()
     audioRecorder.release()
     deviceMonitoringJobs.values.forEach { it.cancel() }
     deviceMonitoringJobs.clear()
@@ -235,5 +238,18 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
         lastAudioRecordingPath = file?.absolutePath,
       )
     }
+  }
+
+  fun playLastRecording() {
+    val path = _uiState.value.lastAudioRecordingPath ?: return
+    audioPlayer.play(path) {
+      _uiState.update { it.copy(isPlayingAudio = false) }
+    }
+    _uiState.update { it.copy(isPlayingAudio = true) }
+  }
+
+  fun stopPlayback() {
+    audioPlayer.stop()
+    _uiState.update { it.copy(isPlayingAudio = false) }
   }
 }

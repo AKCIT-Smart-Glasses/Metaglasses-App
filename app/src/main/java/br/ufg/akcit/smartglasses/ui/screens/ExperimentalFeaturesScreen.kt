@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,6 +49,16 @@ fun ExperimentalFeaturesScreen(
                     text = "Último arquivo: ${path.substringAfterLast("/")}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            uiState.lastAudioRecordingPath?.let {
+                SwitchButton(
+                    label = if (uiState.isPlayingAudio) "Parar" else "Reproduzir último áudio",
+                    onClick = {
+                        if (uiState.isPlayingAudio) viewModel.stopPlayback()
+                        else viewModel.playLastRecording()
+                    },
                 )
             }
         }
