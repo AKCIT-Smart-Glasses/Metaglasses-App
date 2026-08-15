@@ -51,14 +51,6 @@ class AudioPlayerManager(private val context: Context) {
                 )
                 setDataSource(filePath)
 
-                val speakerDevice = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull {
-                    it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-                }
-                if (speakerDevice != null) {
-                    preferredDevice = speakerDevice
-                    Log.d(TAG, "Routing playback to built-in speaker: ${speakerDevice.productName}")
-                }
-
                 prepare()
 
                 try {

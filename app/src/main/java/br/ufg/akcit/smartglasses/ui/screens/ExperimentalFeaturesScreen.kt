@@ -431,7 +431,7 @@ fun AudioPlayerCard(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Text(
-                        text = "Saída para o alto-falante do óculos",
+                        text = "Áudio via Bluetooth / Alto-falante (+15 dB boost ativo)",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
