@@ -28,12 +28,15 @@ import com.meta.wearable.dat.core.types.DeviceIdentifier
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
 import com.meta.wearable.dat.core.types.RegistrationState
+import android.media.MediaMetadataRetriever
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class WearablesViewModel(application: Application) : AndroidViewModel(application) {
@@ -209,6 +212,7 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   override fun onCleared() {
     super.onCleared()
     // Cancel all device monitoring jobs when ViewModel is cleared
+    audioProgressJob?.cancel()
     audioPlayer.release()
     audioRecorder.release()
     deviceMonitoringJobs.values.forEach { it.cancel() }
@@ -223,33 +227,141 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   }
 
   private val audioRecorder = AudioRecorderManager(application)
+  private var audioProgressJob: Job? = null
 
   fun startAudioRecording() {
     if (_uiState.value.isRecordingAudio) return
+    stopAudioPlayback()
     audioRecorder.startRecording()
     _uiState.update { it.copy(isRecordingAudio = true) }
   }
 
   fun stopAudioRecording() {
     val file = audioRecorder.stopRecording()
+    val duration = file?.let { getAudioDuration(it.absolutePath) } ?: 0
     _uiState.update {
       it.copy(
         isRecordingAudio = false,
         lastAudioRecordingPath = file?.absolutePath,
+        isPlayingAudio = false,
+        isAudioPaused = false,
+        currentAudioPositionMs = 0,
+        totalAudioDurationMs = duration,
+      )
+    }
+  }
+
+  private fun startAudioProgressTracker() {
+    audioProgressJob?.cancel()
+    audioProgressJob = viewModelScope.launch {
+      while (isActive && audioPlayer.isPlaying) {
+        val currentPos = audioPlayer.currentPosition
+        val totalDur = audioPlayer.duration
+        _uiState.update {
+          it.copy(
+            currentAudioPositionMs = currentPos,
+            totalAudioDurationMs = if (totalDur > 0) totalDur else it.totalAudioDurationMs,
+          )
+        }
+        delay(100L)
+      }
+    }
+  }
+
+  fun playAudio() {
+    val path = _uiState.value.lastAudioRecordingPath ?: return
+    if (_uiState.value.isAudioPaused) {
+      audioPlayer.resume()
+      _uiState.update { it.copy(isPlayingAudio = true, isAudioPaused = false) }
+      startAudioProgressTracker()
+    } else {
+      audioPlayer.play(path) {
+        audioProgressJob?.cancel()
+        _uiState.update {
+          it.copy(
+            isPlayingAudio = false,
+            isAudioPaused = false,
+            currentAudioPositionMs = 0,
+          )
+        }
+      }
+      val duration = audioPlayer.duration
+      _uiState.update {
+        it.copy(
+          isPlayingAudio = true,
+          isAudioPaused = false,
+          totalAudioDurationMs = if (duration > 0) duration else it.totalAudioDurationMs,
+        )
+      }
+      startAudioProgressTracker()
+    }
+  }
+
+  fun pauseAudio() {
+    audioPlayer.pause()
+    audioProgressJob?.cancel()
+    _uiState.update {
+      it.copy(
+        isPlayingAudio = false,
+        isAudioPaused = true,
+        currentAudioPositionMs = audioPlayer.currentPosition,
+      )
+    }
+  }
+
+  fun togglePlayPauseAudio() {
+    if (_uiState.value.isPlayingAudio) {
+      pauseAudio()
+    } else {
+      playAudio()
+    }
+  }
+
+  fun seekAudio(positionMs: Int) {
+    audioPlayer.seekTo(positionMs)
+    _uiState.update { it.copy(currentAudioPositionMs = positionMs) }
+  }
+
+  fun forwardAudio(ms: Int = 5000) {
+    val total = _uiState.value.totalAudioDurationMs
+    val newPos = (_uiState.value.currentAudioPositionMs + ms).coerceAtMost(if (total > 0) total else Int.MAX_VALUE)
+    seekAudio(newPos)
+  }
+
+  fun rewindAudio(ms: Int = 5000) {
+    val newPos = (_uiState.value.currentAudioPositionMs - ms).coerceAtLeast(0)
+    seekAudio(newPos)
+  }
+
+  fun stopAudioPlayback() {
+    audioPlayer.stop()
+    audioProgressJob?.cancel()
+    _uiState.update {
+      it.copy(
+        isPlayingAudio = false,
+        isAudioPaused = false,
+        currentAudioPositionMs = 0,
       )
     }
   }
 
   fun playLastRecording() {
-    val path = _uiState.value.lastAudioRecordingPath ?: return
-    audioPlayer.play(path) {
-      _uiState.update { it.copy(isPlayingAudio = false) }
-    }
-    _uiState.update { it.copy(isPlayingAudio = true) }
+    playAudio()
   }
 
   fun stopPlayback() {
-    audioPlayer.stop()
-    _uiState.update { it.copy(isPlayingAudio = false) }
+    stopAudioPlayback()
+  }
+
+  private fun getAudioDuration(filePath: String): Int {
+    return try {
+      val retriever = MediaMetadataRetriever()
+      retriever.setDataSource(filePath)
+      val time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+      retriever.release()
+      time?.toIntOrNull() ?: 0
+    } catch (e: Exception) {
+      0
+    }
   }
 }

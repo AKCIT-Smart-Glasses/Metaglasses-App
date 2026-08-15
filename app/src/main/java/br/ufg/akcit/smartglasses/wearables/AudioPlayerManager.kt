@@ -15,6 +15,27 @@ class AudioPlayerManager(private val context: Context) {
 
     private val TAG = "AUDIO_PLAYER_MANAGER"
 
+    val isPlaying: Boolean
+        get() = try {
+            mediaPlayer?.isPlaying == true
+        } catch (e: Exception) {
+            false
+        }
+
+    val currentPosition: Int
+        get() = try {
+            mediaPlayer?.currentPosition ?: 0
+        } catch (e: Exception) {
+            0
+        }
+
+    val duration: Int
+        get() = try {
+            mediaPlayer?.duration ?: 0
+        } catch (e: Exception) {
+            0
+        }
+
     fun play(filePath: String, onCompletion: () -> Unit) {
         release()
         try {
@@ -65,8 +86,40 @@ class AudioPlayerManager(private val context: Context) {
         }
     }
 
+    fun pause() {
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error pausing audio", e)
+        }
+    }
+
+    fun resume() {
+        try {
+            if (mediaPlayer != null && !mediaPlayer!!.isPlaying) {
+                mediaPlayer?.start()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resuming audio", e)
+        }
+    }
+
+    fun seekTo(positionMs: Int) {
+        try {
+            mediaPlayer?.seekTo(positionMs)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error seeking audio", e)
+        }
+    }
+
     fun stop() {
-        mediaPlayer?.stop()
+        try {
+            mediaPlayer?.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping audio", e)
+        }
         release()
     }
 
@@ -85,7 +138,4 @@ class AudioPlayerManager(private val context: Context) {
         }
         mediaPlayer = null
     }
-
-    val isPlaying: Boolean
-        get() = mediaPlayer?.isPlaying == true
 }
