@@ -27,8 +27,11 @@ class AudioRecorderManager(private val context: Context) {
         val selectedDevice: AudioDeviceInfo? = getBluetoothAudioDeviceInfo()
 
         if (selectedDevice != null) {
-            audioManager.mode = AudioManager.MODE_NORMAL
-            audioManager.setCommunicationDevice(selectedDevice)
+            audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+            val success = audioManager.setCommunicationDevice(selectedDevice)
+            Log.d(TAG, "setCommunicationDevice: $success (${selectedDevice.productName}, type=${selectedDevice.type})")
+        } else {
+            Log.w(TAG, "No Bluetooth SCO/BLE headset found, recording with default device")
         }
 
         mediaRecorder = MediaRecorder(context).apply {
@@ -37,8 +40,8 @@ class AudioRecorderManager(private val context: Context) {
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
 
             setAudioChannels(1)
-            setAudioSamplingRate(8000)
-            setAudioEncodingBitRate(16000)
+            setAudioSamplingRate(16000)
+            setAudioEncodingBitRate(64000)
 
             setOutputFile(file.absolutePath)
 
@@ -58,20 +61,24 @@ class AudioRecorderManager(private val context: Context) {
             Log.d(TAG, "Stopped audio recording")
         }
         mediaRecorder = null
+        audioManager.clearCommunicationDevice()
+        audioManager.mode = AudioManager.MODE_NORMAL
         return outputFile
     }
 
     fun release() {
         mediaRecorder?.release()
         mediaRecorder = null
+        audioManager.clearCommunicationDevice()
+        audioManager.mode = AudioManager.MODE_NORMAL
     }
 
     fun getBluetoothAudioDeviceInfo(): AudioDeviceInfo? {
         val devices = audioManager.availableCommunicationDevices
-        val userSelectedDeviceType = AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-
         for (device in devices) {
-            if (device.type == userSelectedDeviceType) {
+            if (device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                device.type == AudioDeviceInfo.TYPE_BLE_HEADSET
+            ) {
                 return device
             }
         }

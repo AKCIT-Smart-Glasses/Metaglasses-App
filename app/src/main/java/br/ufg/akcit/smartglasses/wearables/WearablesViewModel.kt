@@ -44,7 +44,7 @@ class WearablesViewModel(application: Application) : AndroidViewModel(applicatio
   val deviceSelector: DeviceSelector by lazy { AutoDeviceSelector() }
   private var deviceSelectorJob: Job? = null
 
-  private val audioPlayer = AudioPlayerManager()
+  private val audioPlayer = AudioPlayerManager(application)
 
   private var monitoringStarted = false
   private val deviceMonitoringJobs = mutableMapOf<DeviceIdentifier, Job>()
