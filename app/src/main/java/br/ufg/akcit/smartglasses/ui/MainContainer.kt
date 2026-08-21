@@ -6,20 +6,17 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// CameraAccessScaffold - DAT Application Navigation Orchestrator
+// MainContainer - DAT Application Navigation Orchestrator
 //
-// This scaffold demonstrates a typical DAT application navigation pattern based on device
-// registration and streaming states from the DAT API.
+// This container manages the top-level application navigation pattern based on device
+// registration state from the DAT API.
 //
 // DAT State-Based Navigation:
 // - HomeScreen: When NOT registered (uiState.isRegistered = false) Shows initial registration UI
 //   calling Wearables.startRegistration()
-// - NonStreamScreen: When registered (uiState.isRegistered = true) but not streaming Shows device
-//   selection, permission checking, and pre-streaming setup
-// - StreamScreen: When actively streaming (uiState.isStreaming = true) Shows live video from
-//   Stream.videoStream and photo capture UI
+// - AppNavigation (CameraScreen / ExperimentalFeatures): When registered (uiState.isRegistered = true)
 //
-// The scaffold also provides a debug menu (in DEBUG builds) that gives access to
+// The container also provides a debug menu (in DEBUG builds) that gives access to
 // MockDeviceKitScreen for testing DAT functionality without physical devices.
 
 package br.ufg.akcit.smartglasses.ui
@@ -52,13 +49,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.ufg.akcit.smartglasses.BuildConfig
+import br.ufg.akcit.smartglasses.R
 import br.ufg.akcit.smartglasses.ui.navigation.AppNavigation
 import br.ufg.akcit.smartglasses.ui.screens.HomeScreen
 import br.ufg.akcit.smartglasses.ui.screens.MockDeviceKitScreen
-import br.ufg.akcit.smartglasses.ui.screens.StreamScreen
+import br.ufg.akcit.smartglasses.ui.theme.AppColor
 import br.ufg.akcit.smartglasses.wearables.WearablesViewModel
 import com.meta.wearable.dat.core.types.Permission
 import com.meta.wearable.dat.core.types.PermissionStatus
@@ -68,6 +68,7 @@ import com.meta.wearable.dat.core.types.PermissionStatus
 fun MainContainer(
     viewModel: WearablesViewModel,
     onRequestWearablesPermission: suspend (Permission) -> PermissionStatus,
+    onRequestRecordAudioPermission: suspend () -> Boolean,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -75,31 +76,25 @@ fun MainContainer(
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Observe recent errors and show snackbar
-    LaunchedEffect(uiState.recentError) {
-        uiState.recentError?.let { errorMessage ->
-            snackbarHostState.showSnackbar(errorMessage)
-            viewModel.clearRecentError()
+    LaunchedEffect(uiState.recentError?.id) {
+        uiState.recentError?.let { error ->
+            snackbarHostState.showSnackbar(error.message)
+            viewModel.clearRecentError(error.id)
         }
     }
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(modifier = Modifier.fillMaxSize()) {
-            when {
-                uiState.isStreaming ->
-                    StreamScreen(
-                        wearablesViewModel = viewModel,
-                    )
-
-                uiState.isRegistered ->
-                    AppNavigation(
-                        viewModel = viewModel,
-                        onRequestWearablesPermission = onRequestWearablesPermission,
-                    )
-
-                else ->
-                    HomeScreen(
-                        viewModel = viewModel,
-                    )
+            if (uiState.isRegistered) {
+                AppNavigation(
+                    viewModel = viewModel,
+                    onRequestWearablesPermission = onRequestWearablesPermission,
+                    onRequestRecordAudioPermission = onRequestRecordAudioPermission,
+                )
+            } else {
+                HomeScreen(
+                    viewModel = viewModel,
+                )
             }
 
             SnackbarHost(
@@ -118,7 +113,7 @@ fun MainContainer(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Error,
-                                contentDescription = "Camera Access error",
+                                contentDescription = stringResource(R.string.scaffold_error_icon_description),
                                 tint = MaterialTheme.colorScheme.error,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -132,8 +127,13 @@ fun MainContainer(
                 FloatingActionButton(
                     onClick = { viewModel.showDebugMenu() },
                     modifier = Modifier.align(Alignment.CenterEnd),
+                    containerColor = AppColor.DeepBlue,
+                    contentColor = Color.White,
                 ) {
-                    Icon(Icons.Default.BugReport, contentDescription = "Debug Menu")
+                    Icon(
+                        Icons.Default.BugReport,
+                        contentDescription = stringResource(R.string.debug_menu_description),
+                    )
                 }
 
                 if (uiState.isDebugMenuVisible) {

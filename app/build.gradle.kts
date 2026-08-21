@@ -6,6 +6,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -14,19 +16,18 @@ plugins {
 
 android {
     namespace = "br.ufg.akcit.smartglasses"
-    compileSdk = 35
+    compileSdk = 36
 
     buildFeatures { buildConfig = true }
 
     defaultConfig {
         applicationId = "br.ufg.akcit.smartglasses"
         minSdk = 31
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables { useSupportLibrary = true }
 
         // Meta Wearables Device Access Toolkit Setup
         // Without Developer Mode, these values need to be set with credentials from the app registered
@@ -46,12 +47,9 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "1.8" }
-    buildFeatures { compose = true }
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.1" }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     signingConfigs {
         getByName("debug") {
@@ -62,6 +60,8 @@ android {
         }
     }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }
 
 dependencies {
     implementation(libs.androidx.activity.compose)
