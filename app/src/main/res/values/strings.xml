@@ -128,4 +128,24 @@
     <string name="getting_started_tip_led" description="Tip about capture LED">The capture LED lets others know when you\'re capturing content or going live.</string>
     <string name="getting_started_tip_photo" description="Tip about photo capture">Capture photos by tapping the camera button.</string>
     <string name="getting_started_continue" description="Continue button">Continue</string>
+
+    <!-- Experimental Features -->
+    <string name="experimental_features_title" description="Title for experimental features screen">Experimental Features</string>
+    <string name="back" description="Back button content description">Back</string>
+    <string name="glasses_microphone_title" description="Glasses microphone card title">Glasses Microphone</string>
+    <string name="recording_badge" description="Recording badge text">RECORDING</string>
+    <string name="recording_active_desc" description="Description when audio recording is active">Capturing audio via Bluetooth SCO from your smart glasses. Speak normally.</string>
+    <string name="recording_idle_desc" description="Description when audio recording is idle">Record audio directly through the built-in microphones of your smart glasses.</string>
+    <string name="start_audio_recording" description="Start audio recording button">Start Recording</string>
+    <string name="stop_audio_recording" description="Stop audio recording button">Stop Recording</string>
+    <string name="default_audio_filename" description="Default audio file name">audio.m4a</string>
+    <string name="player_status_playing" description="Audio player playing status">Playing...</string>
+    <string name="player_status_paused" description="Audio player paused status">Paused</string>
+    <string name="player_status_ready" description="Audio player ready status">Recording ready</string>
+    <string name="player_rewind_desc" description="Rewind 5 seconds content description">Rewind 5 seconds</string>
+    <string name="player_forward_desc" description="Forward 5 seconds content description">Forward 5 seconds</string>
+    <string name="player_stop_desc" description="Stop audio playback content description">Stop audio</string>
+    <string name="player_pause_desc" description="Pause audio playback content description">Pause audio</string>
+    <string name="player_play_desc" description="Play audio playback content description">Play audio</string>
+    <string name="audio_output_info" description="Audio output boost badge">Audio via Bluetooth / Speaker (+15 dB boost active)</string>
 </resources>

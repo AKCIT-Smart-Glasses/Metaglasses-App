@@ -65,11 +65,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import br.ufg.akcit.smartglasses.R
 import br.ufg.akcit.smartglasses.wearables.WearablesUiState
 import br.ufg.akcit.smartglasses.wearables.WearablesViewModel
 import java.util.Locale
@@ -87,7 +89,7 @@ fun ExperimentalFeaturesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Experimental Features",
+                        text = stringResource(R.string.experimental_features_title),
                         fontWeight = FontWeight.Bold,
                     )
                 },
@@ -95,7 +97,7 @@ fun ExperimentalFeaturesScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -181,7 +183,7 @@ fun AudioRecordingCard(
                         tint = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = "Microfone dos Óculos",
+                        text = stringResource(R.string.glasses_microphone_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -205,7 +207,7 @@ fun AudioRecordingCard(
                                     .background(MaterialTheme.colorScheme.error),
                             )
                             Text(
-                                text = "GRAVANDO",
+                                text = stringResource(R.string.recording_badge),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
@@ -217,9 +219,9 @@ fun AudioRecordingCard(
 
             Text(
                 text = if (isRecording) {
-                    "Capturando áudio via Bluetooth SCO dos seus smartglasses. Fale normalmente."
+                    stringResource(R.string.recording_active_desc)
                 } else {
-                    "Grave áudio diretamente através dos microfones integrados dos seus óculos inteligentes."
+                    stringResource(R.string.recording_idle_desc)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -242,7 +244,7 @@ fun AudioRecordingCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (isRecording) "Parar Gravação" else "Iniciar Gravação",
+                    text = if (isRecording) stringResource(R.string.stop_audio_recording) else stringResource(R.string.start_audio_recording),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                 )
@@ -261,7 +263,8 @@ fun AudioPlayerCard(
     onForward: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fileName = uiState.lastAudioRecordingPath?.substringAfterLast("/") ?: "audio.m4a"
+    val defaultAudioFileName = stringResource(R.string.default_audio_filename)
+    val fileName = uiState.lastAudioRecordingPath?.substringAfterLast("/") ?: defaultAudioFileName
     val totalDurationMs = uiState.totalAudioDurationMs
     val currentPositionMs = uiState.currentAudioPositionMs
 
@@ -311,7 +314,13 @@ fun AudioPlayerCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = if (uiState.isPlayingAudio) "Reproduzindo..." else if (uiState.isAudioPaused) "Pausado" else "Gravação pronta",
+                        text = if (uiState.isPlayingAudio) {
+                            stringResource(R.string.player_status_playing)
+                        } else if (uiState.isAudioPaused) {
+                            stringResource(R.string.player_status_paused)
+                        } else {
+                            stringResource(R.string.player_status_ready)
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -369,7 +378,7 @@ fun AudioPlayerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FastRewind,
-                        contentDescription = "Voltar 5 segundos",
+                        contentDescription = stringResource(R.string.player_rewind_desc),
                     )
                 }
 
@@ -381,7 +390,7 @@ fun AudioPlayerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Stop,
-                        contentDescription = "Parar áudio",
+                        contentDescription = stringResource(R.string.player_stop_desc),
                     )
                 }
 
@@ -396,7 +405,11 @@ fun AudioPlayerCard(
                 ) {
                     Icon(
                         imageVector = if (uiState.isPlayingAudio) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (uiState.isPlayingAudio) "Pausar áudio" else "Reproduzir áudio",
+                        contentDescription = if (uiState.isPlayingAudio) {
+                            stringResource(R.string.player_pause_desc)
+                        } else {
+                            stringResource(R.string.player_play_desc)
+                        },
                         modifier = Modifier.size(32.dp),
                     )
                 }
@@ -408,7 +421,7 @@ fun AudioPlayerCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FastForward,
-                        contentDescription = "Avançar 5 segundos",
+                        contentDescription = stringResource(R.string.player_forward_desc),
                     )
                 }
             }
@@ -431,7 +444,7 @@ fun AudioPlayerCard(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                     Text(
-                        text = "Áudio via Bluetooth / Alto-falante (+15 dB boost ativo)",
+                        text = stringResource(R.string.audio_output_info),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )

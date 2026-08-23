@@ -399,7 +399,7 @@ private fun TopBar(
         ) {
           Icon(
               imageVector = Icons.Default.GraphicEq,
-              contentDescription = "Experimental Features",
+              contentDescription = stringResource(R.string.experimental_features_title),
               tint = Color.White,
               modifier = Modifier.size(24.dp),
           )
