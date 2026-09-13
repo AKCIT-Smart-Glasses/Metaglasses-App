@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package metaglass;
+
+option java_package = "com.metaglass.proto";
+option java_outer_classname = "ContextProto";
+option java_multiple_files = true;
+
+import "common.proto";
+
+// ══════════════════════════════════════════════════════════════
+//  CONTEXT — Datalake interface
+// ══════════════════════════════════════════════════════════════
+service Context {
+  rpc SemanticSearch(SemanticSearchRequest) returns (SemanticSearchResponse);
+  rpc PushContext(PushContextRequest) returns (PushContextResponse);
+  rpc GetSessionContext(GetSessionContextRequest) returns (GetSessionContextResponse);
+  rpc StreamContext(stream StreamContextRequest) returns (StreamContextResponse);
+}
+
+message SemanticSearchRequest {
+  string user_id = 1;
+  MediaPayload query = 2;
+  int32 top_k = 3;
+  float score_threshold = 4;
+  repeated string collections = 5;
+  map<string, string> filters = 6;
+}
+
+message SemanticSearchResponse {
+  Status status = 1;
+  repeated SemanticResult results = 2;
+}
+
+message SemanticResult {
+  string id = 1;
+  string collection = 2;
+  float score = 3;
+  MediaPayload payload = 4;
+  map<string, string> metadata = 5;
+}
+
+message PushContextRequest {
+  string session_id = 1;
+  repeated MediaPayload payloads = 2;
+}
+
+message PushContextResponse {
+  Status status = 1;
+  string context_id = 2;
+}
+
+message StreamContextRequest {
+  string session_id = 1;
+  repeated MediaPayload payloads = 2;
+}
+
+message StreamContextResponse {
+  Status status = 1;
+  string context_id = 2;
+  int32 frames_received = 3;
+  int32 frames_selected = 4;
+}
+
+message GetSessionContextRequest {
+  string session_id = 1;
+  int32 max_entries = 2;
+}
+
+message GetSessionContextResponse {
+  Status status = 1;
+  repeated MediaPayload entries = 2;
+}

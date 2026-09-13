@@ -148,4 +148,34 @@
     <string name="player_pause_desc" description="Pause audio playback content description">Pausar áudio</string>
     <string name="player_play_desc" description="Play audio playback content description">Reproduzir áudio</string>
     <string name="audio_output_info" description="Audio output boost badge">Áudio via Bluetooth / Alto-falante (+15 dB boost ativo)</string>
+
+    <!-- Voice Assistant -->
+    <string name="assistant_title" description="Voice Assistant screen title">Assistente Inteligente</string>
+    <string name="assistant_state_ready" description="Status when assistant is ready for tap">Pronto para Ouvir</string>
+    <string name="assistant_state_ready_desc" description="Instruction to start assistant">Toque no microfone para fazer uma pergunta</string>
+    <string name="assistant_state_off" description="Status when assistant is turned off">Assistente Desligado</string>
+    <string name="assistant_state_off_desc" description="Instruction to start assistant">Toque no botão central para começar a ouvir</string>
+    <string name="assistant_state_initializing" description="Status when voice model is initializing">Inicializando modelo de voz…</string>
+    <string name="assistant_state_listening_wakeword" description="Status when listening for wake word">Ouvindo… Diga \"Olá Óculos\" ou toque para falar</string>
+    <string name="assistant_state_listening_command" description="Status when listening for command">Ouvindo sua dúvida… Fale agora</string>
+    <string name="assistant_state_listening_command_desc" description="Status hint when listening">O silêncio enviará sua pergunta automaticamente</string>
+    <string name="assistant_state_processing" description="Status when processing command">Processando sua pergunta…</string>
+    <string name="assistant_state_speaking" description="Status when assistant is speaking">Assistente respondendo…</string>
+    <string name="assistant_state_error" description="Status when audio error occurs">Erro no áudio</string>
+    <string name="assistant_btn_talk" description="Tap to speak button accessibility">Tocar para fazer pergunta</string>
+    <string name="assistant_btn_finish_listening" description="Tap to finish speaking">Finalizar pergunta</string>
+    <string name="assistant_btn_stop_speaking" description="Tap to interrupt speaking">Parar resposta</string>
+    <string name="assistant_btn_turn_on" description="Turn on assistant accessibility description">Ligar assistente de voz</string>
+    <string name="assistant_btn_turn_off" description="Turn off assistant accessibility description">Desligar assistente de voz</string>
+    <string name="assistant_hands_free_label" description="Hands-free toggle label">Modo Mãos-Livres</string>
+    <string name="assistant_hands_free_desc" description="Hands-free mode active description">Ouvindo \"Olá Óculos\" em segundo plano</string>
+    <string name="assistant_open_camera" description="Open camera button">Câmera</string>
+    <string name="assistant_mic_glasses_active" description="Glasses microphone active badge">Microfone dos óculos ativo</string>
+    <string name="assistant_mic_phone_active" description="Phone microphone active badge">Microfone do celular ativo</string>
+    <string name="assistant_last_command_label" description="Last recognized command label">Sua pergunta</string>
+    <string name="elo_notification_label" description="Label above the last reminder notification received">Última notificação</string>
+    <string name="elo_notification_channel_name" description="Elo session notification channel name">Assistente inteligente</string>
+    <string name="elo_notification_channel_description" description="Elo session notification channel description">Mantém a conexão com o assistente e notificações ativas em segundo plano</string>
+    <string name="elo_notification_title" description="Elo session notification title">Assistente conectado</string>
+    <string name="elo_notification_body" description="Elo session notification body">Conectado — notificações e respostas serão faladas mesmo com a tela apagada.</string>
 </resources>

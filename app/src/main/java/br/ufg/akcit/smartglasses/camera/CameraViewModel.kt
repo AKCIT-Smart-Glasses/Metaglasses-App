@@ -461,6 +461,25 @@ class CameraViewModel(
     }
   }
 
+  /**
+   * Captures one photo without touching [CameraUiState.activePreview] or
+   * [CameraUiState.isCapturingPhoto] for assistant queries.
+   * Returns null if there is no active stream or capture fails.
+   */
+  suspend fun capturePhotoForElo(): Bitmap? {
+    if (!_uiState.value.isStreaming) return null
+    var bitmap: Bitmap? = null
+    stream
+        ?.capturePhoto()
+        ?.onSuccess { photoData ->
+          bitmap = withContext(Dispatchers.Default) { decodePhoto(photoData) }
+        }
+        ?.onFailure { error, _ ->
+          Log.w(TAG, "Assistant photo capture failed: ${error.description}")
+        }
+    return bitmap
+  }
+
   // MARK: - Recording
 
   fun toggleRecording(requestRecordAudioPermission: suspend () -> Boolean) {

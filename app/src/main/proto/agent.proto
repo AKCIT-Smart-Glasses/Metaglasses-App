@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package metaglass;
+
+option java_package = "com.metaglass.proto";
+option java_outer_classname = "AgentProto";
+option java_multiple_files = true;
+
+import "common.proto";
+
+// ══════════════════════════════════════════════════════════════
+//  AGENT — Interaction turn (query in, answer out)
+// ══════════════════════════════════════════════════════════════
+//  The user presses the button and asks something. One Interact
+//  call runs the full turn: frames+audio in, the assistant's
+//  answer out. The audio carries the spoken query (transcribed by
+//  STT) and, together with the frames, feeds the TADPOLE context
+//  panel — both persisted as ONE `memory` row (kind=interaction).
+//  Separate from the Context service, which serves the passive
+//  ambient-context stream (no question).
+service Agent {
+
+  // One full interaction turn: frames+audio in, answer out.
+  rpc Interact(InteractRequest) returns (InteractResponse);
+}
+
+// ── Interact ────────────────────────────────────────────────────────
+message InteractRequest {
+  string session_id = 1;
+  // Same audio (carries the spoken query via STT) + N frames.
+  repeated MediaPayload payloads = 2;
+}
+
+message InteractResponse {
+  Status status = 1;
+  string response = 2;    // assistant answer (text, pt-BR)
+  string query = 3;       // finalized query (STT transcript) — debug/UX
+  string agent = 4;       // agent that answered ("general", ...)
+  string memory_id = 5;   // persisted `memory` row of the turn (kind=interaction)
+
+  // The answer as speech, synthesized by the ORCHESTRATOR (TTS_PRESET). The client
+  // just plays these bytes — it owns no model and no provider credentials.
+  bytes audio = 6;
+  string audio_mime_type = 7;  // e.g. "audio/mpeg" — sent explicitly, never sniffed
+}

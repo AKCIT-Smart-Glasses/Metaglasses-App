@@ -102,6 +102,7 @@ fun CameraScreen(
     onRequestRecordAudioPermission: suspend () -> Boolean,
     modifier: Modifier = Modifier,
     onNavigateToFeatures: (() -> Unit)? = null,
+    onNavigateToAssistant: (() -> Unit)? = null,
     cameraViewModel: CameraViewModel = viewModel(
         factory =
             CameraViewModel.Factory(
@@ -152,6 +153,7 @@ fun CameraScreen(
             showSettingsMenu = false
           },
           onNavigateToFeatures = onNavigateToFeatures,
+          onNavigateToAssistant = onNavigateToAssistant,
       )
 
       Spacer(modifier = Modifier.weight(1f))
@@ -362,6 +364,7 @@ private fun TopBar(
     onToggleSettings: () -> Unit,
     onDisconnect: () -> Unit,
     onNavigateToFeatures: (() -> Unit)? = null,
+    onNavigateToAssistant: (() -> Unit)? = null,
 ) {
   Row(
       modifier =
@@ -392,6 +395,20 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+      if (onNavigateToAssistant != null) {
+        IconButton(
+            onClick = onNavigateToAssistant,
+            modifier = Modifier.size(32.dp),
+        ) {
+          Icon(
+              imageVector = Icons.Default.Mic,
+              contentDescription = stringResource(R.string.assistant_title),
+              tint = Color.White,
+              modifier = Modifier.size(24.dp),
+          )
+        }
+      }
+
       if (onNavigateToFeatures != null) {
         IconButton(
             onClick = onNavigateToFeatures,
