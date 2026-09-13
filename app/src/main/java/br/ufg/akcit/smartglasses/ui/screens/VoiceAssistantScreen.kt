@@ -78,6 +78,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import br.ufg.akcit.smartglasses.camera.CameraViewModel
 import br.ufg.akcit.smartglasses.elo.session.EloSessionService
 import br.ufg.akcit.smartglasses.elo.turn.PhotoCapture
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import com.meta.wearable.dat.core.types.RegistrationState
 import kotlinx.coroutines.launch
 
@@ -87,6 +92,7 @@ fun VoiceAssistantScreen(
     onRequestRecordAudioPermission: suspend () -> Boolean,
     onNavigateToCamera: () -> Unit,
     onNavigateToFeatures: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     cameraViewModel: CameraViewModel = viewModel(
         factory =
@@ -107,8 +113,6 @@ fun VoiceAssistantScreen(
     }
     val voiceState by sessionManager.uiState.collectAsStateWithLifecycle()
 
-    var showDisconnectMenu by remember { mutableStateOf(false) }
-
     DisposableEffect(Unit) {
         EloSessionService.start(context)
         onDispose {
@@ -125,28 +129,35 @@ fun VoiceAssistantScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Top Bar
+            // Top Bar with 4-option menu
             AssistantTopBar(
                 isDisconnectEnabled = wearablesUi.registrationState == RegistrationState.REGISTERED,
-                showDisconnectMenu = showDisconnectMenu,
-                onToggleDisconnectMenu = { showDisconnectMenu = !showDisconnectMenu },
                 onDisconnect = {
                     sessionManager.stopSession()
                     wearablesViewModel.startUnregistration(context as androidx.activity.ComponentActivity)
-                    showDisconnectMenu = false
                 },
                 onNavigateToCamera = onNavigateToCamera,
                 onNavigateToFeatures = onNavigateToFeatures,
+                onNavigateToSettings = onNavigateToSettings,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 8.dp, top = 8.dp, bottom = 4.dp),
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-            // Audio routing device badge
-            AudioDeviceBadge(isGlassesMic = voiceState.isGlassesMicActive)
+                // Audio routing device badge
+                AudioDeviceBadge(isGlassesMic = voiceState.isGlassesMicActive)
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -192,6 +203,7 @@ fun VoiceAssistantScreen(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
+            }
         }
     }
 }
@@ -199,67 +211,110 @@ fun VoiceAssistantScreen(
 @Composable
 private fun AssistantTopBar(
     isDisconnectEnabled: Boolean,
-    showDisconnectMenu: Boolean,
-    onToggleDisconnectMenu: () -> Unit,
     onDisconnect: () -> Unit,
     onNavigateToCamera: () -> Unit,
     onNavigateToFeatures: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text(
-                text = stringResource(R.string.assistant_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        Text(
+            text = stringResource(R.string.assistant_title),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            IconButton(onClick = onNavigateToCamera) {
+        Box {
+            IconButton(
+                onClick = { menuExpanded = true },
+                modifier = Modifier.size(40.dp),
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Videocam,
-                    contentDescription = stringResource(R.string.assistant_open_camera),
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.debug_menu_description),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
-            IconButton(onClick = onNavigateToFeatures) {
-                Icon(
-                    imageVector = Icons.Default.GraphicEq,
-                    contentDescription = stringResource(R.string.experimental_features_title),
-                    tint = MaterialTheme.colorScheme.onBackground,
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                // 1. Câmera
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_camera)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onNavigateToCamera()
+                    },
                 )
-            }
 
-            Box {
-                IconButton(onClick = onToggleDisconnectMenu) {
-                    Icon(
-                        imageVector = Icons.Default.LinkOff,
-                        contentDescription = stringResource(R.string.unregister_button_title),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+                // 2. Recursos Experimentais
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_experimental_features)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onNavigateToFeatures()
+                    },
+                )
 
-                if (showDisconnectMenu) {
-                    SwitchButton(
-                        label = stringResource(R.string.unregister_button_title),
-                        onClick = onDisconnect,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(y = 44.dp)
-                            .width(150.dp),
-                        isDestructive = true,
-                        enabled = isDisconnectEnabled,
-                    )
-                }
+                // 3. Configurações do Servidor
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.menu_settings)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onNavigateToSettings()
+                    },
+                )
+
+                HorizontalDivider()
+
+                // 4. Desconectar Óculos
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = stringResource(R.string.menu_disconnect),
+                            color = if (isDisconnectEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.LinkOff,
+                            contentDescription = null,
+                            tint = if (isDisconnectEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        )
+                    },
+                    enabled = isDisconnectEnabled,
+                    onClick = {
+                        menuExpanded = false
+                        onDisconnect()
+                    },
+                )
             }
         }
     }

@@ -178,4 +178,23 @@
     <string name="elo_notification_channel_description" description="Elo session notification channel description">Keeps the connection to the assistant and notifications alive in the background</string>
     <string name="elo_notification_title" description="Elo session notification title">Assistant is listening</string>
     <string name="elo_notification_body" description="Elo session notification body">Connected — notifications will speak even with the screen off.</string>
+
+    <!-- Server Settings & Menu -->
+    <string name="settings_screen_title" description="Server Settings screen title">Server Settings</string>
+    <string name="settings_server_host_label" description="Orchestrator Host label">Orchestrator Host (IP or domain)</string>
+    <string name="settings_server_port_label" description="Orchestrator Port label">Port</string>
+    <string name="settings_save_and_connect" description="Save and connect button">Save &amp; Connect</string>
+    <string name="settings_restore_default" description="Restore default button">Restore Default</string>
+    <string name="settings_connection_status_title" description="Connection status section title">Connection Status</string>
+    <string name="settings_emulator_tip" description="Tip for emulator">Android Emulator: 10.0.2.2</string>
+    <string name="settings_physical_device_tip" description="Tip for physical device">Physical phone: PC Wi-Fi IP (e.g. 192.168.x.x)</string>
+    <string name="settings_reset_identity_title" description="Reset identity title">Device Identity</string>
+    <string name="settings_reset_identity_desc" description="Reset identity description">Clears registered device and user UUIDs on orchestrator</string>
+    <string name="settings_reset_identity_button" description="Reset identity button">Reset Identity</string>
+    <string name="settings_saved_toast" description="Settings saved toast">Server settings updated</string>
+    <string name="settings_reset_identity_toast" description="Identity reset toast">Device identity reset</string>
+    <string name="menu_camera" description="Menu item Camera">Camera</string>
+    <string name="menu_experimental_features" description="Menu item Experimental Features">Experimental Features</string>
+    <string name="menu_settings" description="Menu item Settings">Server Settings</string>
+    <string name="menu_disconnect" description="Menu item Disconnect">Disconnect Glasses</string>
 </resources>

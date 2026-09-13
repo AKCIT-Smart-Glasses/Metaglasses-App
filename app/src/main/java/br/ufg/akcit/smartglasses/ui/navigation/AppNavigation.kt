@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import br.ufg.akcit.smartglasses.ui.screens.CameraScreen
 import br.ufg.akcit.smartglasses.ui.screens.ExperimentalFeaturesScreen
+import br.ufg.akcit.smartglasses.ui.screens.ServerSettingsScreen
 import br.ufg.akcit.smartglasses.ui.screens.VoiceAssistantScreen
 import br.ufg.akcit.smartglasses.wearables.WearablesViewModel
 import com.meta.wearable.dat.core.types.Permission
@@ -26,6 +27,7 @@ fun AppNavigation(
                 onRequestRecordAudioPermission = onRequestRecordAudioPermission,
                 onNavigateToCamera = { navController.navigate("camera") },
                 onNavigateToFeatures = { navController.navigate("features") },
+                onNavigateToSettings = { navController.navigate("settings") },
             )
         }
         composable("camera") {
@@ -41,6 +43,11 @@ fun AppNavigation(
             ExperimentalFeaturesScreen(
                 navController = navController,
                 viewModel = viewModel,
+            )
+        }
+        composable("settings") {
+            ServerSettingsScreen(
+                onBack = { navController.popBackStack() },
             )
         }
     }
