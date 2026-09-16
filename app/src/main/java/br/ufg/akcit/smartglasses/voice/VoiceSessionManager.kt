@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,7 +70,6 @@ class VoiceSessionManager(
     private val container: EloContainer = (context.applicationContext as SmartGlassesApp).container,
     private val soundFeedback: SoundFeedbackHelper = SoundFeedbackHelper(),
     private val modelManager: VoskModelManager = VoskModelManager(context),
-    private val ttsManager: TextToSpeechManager = TextToSpeechManager(context),
     var photoCapture: PhotoCapture? = null,
 ) {
     private val tag = "VoiceSessionManager"
@@ -97,6 +97,8 @@ class VoiceSessionManager(
     private var requestDirectCommand: Boolean = false
     @Volatile
     private var requestFinishEarly: Boolean = false
+    @Volatile
+    private var receivedAnswerNotification: Boolean = false
 
     init {
         // Monitor orchestrator connection state
@@ -106,7 +108,7 @@ class VoiceSessionManager(
             }
         }
 
-        // Monitor server-side notifications (including holding phrases like "Só um instante...")
+        // Monitor server-side notifications (including holding phrases and early answers)
         notificationJob = scope.launch {
             container.notificationSubscriber.notifications.collect { notification ->
                 handleServerNotification(notification)
@@ -116,13 +118,21 @@ class VoiceSessionManager(
 
     private fun handleServerNotification(notification: com.metaglass.proto.Notification) {
         Log.i(tag, "Notification from backend: type=${notification.type}, text=\"${notification.text}\"")
-        if (_uiState.value.state == VoiceSessionState.PROCESSING) {
-            // If server sent holding audio during turn processing (Criterion 5)
-            if (notification.type == "holding" || notification.audio.size() > 0) {
+        if (_uiState.value.state == VoiceSessionState.PROCESSING || _uiState.value.state == VoiceSessionState.SPEAKING) {
+            if (notification.type == "holding") {
                 if (notification.text.isNotBlank()) {
                     _uiState.update { it.copy(partialTranscription = notification.text) }
                 }
-                container.ttsPlayer.play(notification.audio.toByteArray(), notification.audioMimeType)
+            } else if (notification.type == "answer") {
+                receivedAnswerNotification = true
+                if (notification.text.isNotBlank()) {
+                    _uiState.update {
+                        it.copy(
+                            state = VoiceSessionState.SPEAKING,
+                            assistantResponse = notification.text,
+                        )
+                    }
+                }
             }
         }
     }
@@ -143,7 +153,6 @@ class VoiceSessionManager(
             VoiceSessionState.SPEAKING -> {
                 // If user taps while speaking, interrupt response and return to IDLE
                 container.ttsPlayer.stop()
-                ttsManager.stop()
                 returnToIdleOrWakeWord()
             }
             VoiceSessionState.PROCESSING -> {
@@ -252,7 +261,6 @@ class VoiceSessionManager(
         listeningJob?.cancel()
         listeningJob = null
         container.ttsPlayer.stop()
-        ttsManager.stop()
         cleanupAudio()
         _uiState.update {
             it.copy(
@@ -490,6 +498,8 @@ class VoiceSessionManager(
         onComplete: () -> Unit,
     ) {
         try {
+            receivedAnswerNotification = false
+
             // 1. Ensure backend session is connected
             var connState = container.connectionManager.state.value
             if (connState !is ConnectionState.Connected) {
@@ -540,12 +550,31 @@ class VoiceSessionManager(
                     onComplete()
                 }
                 if (!played) {
-                    ttsManager.speak(reply) { onComplete() }
+                    onComplete()
                 }
             } else {
-                // Fallback to local TTS if backend TTS was not generated
-                ttsManager.speak(reply) {
-                    onComplete()
+                // If audio was already delivered via early Notification (e.g. SPEAK_EARLY / direct triage),
+                // wait for TtsPlayer to finish playing the notification audio.
+                if (container.ttsPlayer.isPlaying()) {
+                    container.ttsPlayer.onPlaybackFinished = {
+                        onComplete()
+                    }
+                } else if (receivedAnswerNotification) {
+                    container.ttsPlayer.onPlaybackFinished = {
+                        onComplete()
+                    }
+                    scope.launch {
+                        delay(1500L)
+                        if (!container.ttsPlayer.isPlaying()) {
+                            onComplete()
+                        }
+                    }
+                } else {
+                    // Text-only mode: display response on screen for 3s then complete
+                    scope.launch {
+                        delay(3000L)
+                        onComplete()
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -566,7 +595,8 @@ class VoiceSessionManager(
                 errorMessage = message,
             )
         }
-        ttsManager.speak(message) {
+        scope.launch {
+            delay(3000L)
             onComplete()
         }
     }
@@ -660,7 +690,6 @@ class VoiceSessionManager(
         connectionJob?.cancel()
         soundFeedback.release()
         modelManager.release()
-        ttsManager.release()
         scope.cancel()
     }
 }

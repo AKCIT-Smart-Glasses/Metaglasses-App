@@ -23,6 +23,8 @@ class TtsPlayer(context: Context) {
   private var player: MediaPlayer? = null
   private var file: File? = null
 
+  var onPlaybackFinished: (() -> Unit)? = null
+
   /** Plays [audio] if non-empty. Calls [onCompletion] when audio finishes playing. */
   fun play(audio: ByteArray, mimeType: String, onCompletion: (() -> Unit)? = null): Boolean {
     if (audio.isEmpty()) return false
@@ -35,11 +37,17 @@ class TtsPlayer(context: Context) {
             setOnCompletionListener {
               reset()
               onCompletion?.invoke()
+              val finished = onPlaybackFinished
+              onPlaybackFinished = null
+              finished?.invoke()
             }
             setOnErrorListener { _, what, extra ->
               Log.w(TAG, "MediaPlayer error (what=$what, extra=$extra)")
               reset()
               onCompletion?.invoke()
+              val finished = onPlaybackFinished
+              onPlaybackFinished = null
+              finished?.invoke()
               true
             }
             prepare()
@@ -48,7 +56,7 @@ class TtsPlayer(context: Context) {
       player = newPlayer
       file = newFile
       true
-    } catch (e: IOException) {
+    } catch (e: Exception) {
       Log.w(TAG, "Failed to play TTS audio", e)
       newFile.delete()
       false
@@ -57,7 +65,10 @@ class TtsPlayer(context: Context) {
 
   fun isPlaying(): Boolean = player?.isPlaying == true
 
-  fun stop() = reset()
+  fun stop() {
+    onPlaybackFinished = null
+    reset()
+  }
 
   private fun reset() {
     player?.let { p ->
