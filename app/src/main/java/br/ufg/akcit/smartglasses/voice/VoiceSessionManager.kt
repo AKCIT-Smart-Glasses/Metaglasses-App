@@ -98,6 +98,8 @@ class VoiceSessionManager(
     @Volatile
     private var requestFinishEarly: Boolean = false
     @Volatile
+    private var requestFollowUpCommand: Boolean = false
+    @Volatile
     private var receivedAnswerNotification: Boolean = false
 
     init {
@@ -339,6 +341,26 @@ class VoiceSessionManager(
                 }
             }
 
+            // Check for automatic follow-up command request after assistant finishes speaking
+            if (requestFollowUpCommand) {
+                requestFollowUpCommand = false
+                inCommandMode = true
+                hasSpoken = false
+                lastSpeechTimestamp = 0L
+                commandStartTime = System.currentTimeMillis()
+                wavWriter.reset()
+                currentRecognizer.close()
+                currentRecognizer = Recognizer(model, sampleRate)
+                soundFeedback.playWakeBeep()
+                _uiState.update {
+                    it.copy(
+                        state = VoiceSessionState.LISTENING_COMMAND,
+                        partialTranscription = "",
+                        amplitudeLevel = 0f,
+                    )
+                }
+            }
+
             val readBytes = audioRecord?.read(buffer, 0, buffer.size) ?: -1
             if (readBytes > 0) {
                 val amplitude = calculateRmsAmplitude(buffer, readBytes)
@@ -442,18 +464,22 @@ class VoiceSessionManager(
 
                             val wavBytes = wavWriter.toWavBytes()
                             wavWriter.reset()
+                            inCommandMode = false
 
                             scope.launch {
-                                processCommandWithOrchestrator(wavBytes, finalCommandText) {
-                                    inCommandMode = false
-                                    hasSpoken = false
-                                    currentRecognizer.close()
-                                    currentRecognizer = Recognizer(model, sampleRate, wakeWordGrammar)
-                                    returnToIdleOrWakeWord()
+                                processCommandWithOrchestrator(wavBytes, finalCommandText) { success ->
+                                    if (success) {
+                                        requestFollowUpCommand = true
+                                    } else {
+                                        inCommandMode = false
+                                        hasSpoken = false
+                                        currentRecognizer.close()
+                                        currentRecognizer = Recognizer(model, sampleRate, wakeWordGrammar)
+                                        returnToIdleOrWakeWord()
+                                    }
                                 }
                             }
                         } else if (finishEarly) {
-                            soundFeedback.playErrorTone()
                             wavWriter.reset()
                             inCommandMode = false
                             hasSpoken = false
@@ -463,7 +489,6 @@ class VoiceSessionManager(
                         }
                     } else if (!hasSpoken && (now - commandStartTime >= initialSpeechTimeoutMs)) {
                         Log.d(tag, "Command listening timeout: no speech detected")
-                        soundFeedback.playErrorTone()
                         wavWriter.reset()
                         inCommandMode = false
                         hasSpoken = false
@@ -495,7 +520,7 @@ class VoiceSessionManager(
     private suspend fun processCommandWithOrchestrator(
         wavBytes: ByteArray,
         commandTextHint: String,
-        onComplete: () -> Unit,
+        onComplete: (success: Boolean) -> Unit,
     ) {
         try {
             receivedAnswerNotification = false
@@ -513,7 +538,7 @@ class VoiceSessionManager(
             if (sessionId == null) {
                 val errMsg = "Não conectado ao servidor do assistente"
                 Log.e(tag, errMsg)
-                handleProcessingError(errMsg, onComplete)
+                handleProcessingError(errMsg) { onComplete(false) }
                 return
             }
 
@@ -547,33 +572,33 @@ class VoiceSessionManager(
             val audioBytes = result.audio
             if (audioBytes.isNotEmpty()) {
                 val played = container.ttsPlayer.play(audioBytes, result.audioMimeType) {
-                    onComplete()
+                    onComplete(true)
                 }
                 if (!played) {
-                    onComplete()
+                    onComplete(true)
                 }
             } else {
                 // If audio was already delivered via early Notification (e.g. SPEAK_EARLY / direct triage),
                 // wait for TtsPlayer to finish playing the notification audio.
                 if (container.ttsPlayer.isPlaying()) {
                     container.ttsPlayer.onPlaybackFinished = {
-                        onComplete()
+                        onComplete(true)
                     }
                 } else if (receivedAnswerNotification) {
                     container.ttsPlayer.onPlaybackFinished = {
-                        onComplete()
+                        onComplete(true)
                     }
                     scope.launch {
                         delay(1500L)
                         if (!container.ttsPlayer.isPlaying()) {
-                            onComplete()
+                            onComplete(true)
                         }
                     }
                 } else {
                     // Text-only mode: display response on screen for 3s then complete
                     scope.launch {
                         delay(3000L)
-                        onComplete()
+                        onComplete(true)
                     }
                 }
             }
@@ -581,8 +606,7 @@ class VoiceSessionManager(
             Log.e(tag, "Failed to process question with orchestrator", e)
             handleProcessingError(
                 "Desculpe, tive uma instabilidade ao me conectar com o assistente. Pode tentar novamente?",
-                onComplete,
-            )
+            ) { onComplete(false) }
         }
     }
 
