@@ -236,7 +236,11 @@ class VoiceSessionManager(
                     container.connectionManager.connect()
                 }
 
-                setupBluetoothAudioRouting()
+                // Mantém o microfone do celular ativo (MODE_NORMAL) para que o rádio dos óculos
+                // fique 100% livre para a conexão DWA (Wi-Fi Direct) e captura instantânea de fotos.
+                audioManager.mode = AudioManager.MODE_NORMAL
+                audioManager.clearCommunicationDevice()
+                _uiState.update { it.copy(isGlassesMicActive = false) }
 
                 if (loadedModel == null) {
                     _uiState.update { it.copy(state = VoiceSessionState.INITIALIZING) }

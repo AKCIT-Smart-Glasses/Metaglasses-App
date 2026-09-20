@@ -104,6 +104,7 @@ fun CameraScreen(
     onNavigateToFeatures: (() -> Unit)? = null,
     onNavigateToAssistant: (() -> Unit)? = null,
     cameraViewModel: CameraViewModel = viewModel(
+        viewModelStoreOwner = LocalActivity.current as ComponentActivity,
         factory =
             CameraViewModel.Factory(
                 application = (LocalActivity.current as ComponentActivity).application,

@@ -105,6 +105,7 @@ fun VoiceAssistantScreen(
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
     cameraViewModel: CameraViewModel = viewModel(
+        viewModelStoreOwner = LocalActivity.current as ComponentActivity,
         factory =
             CameraViewModel.Factory(
                 application = (LocalActivity.current as ComponentActivity).application,
