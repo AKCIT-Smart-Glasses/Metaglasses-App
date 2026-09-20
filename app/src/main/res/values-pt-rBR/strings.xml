@@ -197,4 +197,8 @@
     <string name="menu_experimental_features" description="Menu item Experimental Features">Recursos Experimentais</string>
     <string name="menu_settings" description="Menu item Settings">Configurações do Servidor</string>
     <string name="menu_disconnect" description="Menu item Disconnect">Desconectar Óculos</string>
+    <string name="assistant_camera_active" description="Glasses camera active badge">Câmera ativa</string>
+    <string name="assistant_camera_inactive" description="Camera paused badge">Câmera pausada</string>
+    <string name="assistant_camera_starting" description="Camera starting badge">Iniciando câmera...</string>
+    <string name="assistant_camera_disconnected" description="Camera disconnected badge">Câmera desconectada</string>
 </resources>

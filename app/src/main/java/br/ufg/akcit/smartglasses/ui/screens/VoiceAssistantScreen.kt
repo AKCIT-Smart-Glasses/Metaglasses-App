@@ -80,15 +80,25 @@ import br.ufg.akcit.smartglasses.elo.session.EloSessionService
 import br.ufg.akcit.smartglasses.elo.turn.PhotoCapture
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideocamOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.meta.wearable.dat.core.session.DeviceSessionState
+import com.meta.wearable.dat.core.types.Permission
+import com.meta.wearable.dat.core.types.PermissionStatus
 import com.meta.wearable.dat.core.types.RegistrationState
 import kotlinx.coroutines.launch
 
 @Composable
 fun VoiceAssistantScreen(
     wearablesViewModel: WearablesViewModel,
+    onRequestWearablesPermission: suspend (Permission) -> PermissionStatus,
     onRequestRecordAudioPermission: suspend () -> Boolean,
     onNavigateToCamera: () -> Unit,
     onNavigateToFeatures: () -> Unit,
@@ -105,6 +115,26 @@ fun VoiceAssistantScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val wearablesUi by wearablesViewModel.uiState.collectAsStateWithLifecycle()
+    val cameraUi by cameraViewModel.uiState.collectAsStateWithLifecycle()
+    var autoStreamEnabled by remember { mutableStateOf(true) }
+    val isGlassesRegistered = wearablesUi.registrationState == RegistrationState.REGISTERED
+    val isGlassesConnected = isGlassesRegistered && wearablesUi.hasActiveDevice
+
+    LaunchedEffect(isGlassesConnected, autoStreamEnabled) {
+        if (isGlassesConnected && autoStreamEnabled) {
+            if (!cameraUi.hasSession) {
+                cameraViewModel.startSession()
+            }
+        } else if (!isGlassesConnected && cameraUi.hasSession) {
+            cameraViewModel.endSession()
+        }
+    }
+
+    LaunchedEffect(isGlassesConnected, cameraUi.isSessionActive, autoStreamEnabled) {
+        if (isGlassesConnected && autoStreamEnabled && cameraUi.isSessionActive && !cameraUi.isStreaming && !cameraUi.isStartingStream) {
+            cameraViewModel.startStreaming()
+        }
+    }
 
     val sessionManager = remember {
         VoiceSessionManager(context).apply {
@@ -117,6 +147,8 @@ fun VoiceAssistantScreen(
         EloSessionService.start(context)
         onDispose {
             sessionManager.release()
+            cameraViewModel.stopStreaming()
+            cameraViewModel.endSession()
         }
     }
 
@@ -156,8 +188,32 @@ fun VoiceAssistantScreen(
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Audio routing device badge
-                AudioDeviceBadge(isGlassesMic = voiceState.isGlassesMicActive)
+                // Audio routing & Camera status badges
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AudioDeviceBadge(isGlassesMic = voiceState.isGlassesMicActive)
+                    CameraStatusBadge(
+                        isStreaming = cameraUi.isStreaming,
+                        isStarting = cameraUi.isStartingStream || cameraUi.sessionState == DeviceSessionState.STARTING,
+                        isGlassesConnected = isGlassesConnected,
+                        onClick = {
+                            if (cameraUi.isStreaming) {
+                                autoStreamEnabled = false
+                                cameraViewModel.stopStreaming()
+                            } else {
+                                autoStreamEnabled = true
+                                if (!cameraUi.hasSession) {
+                                    cameraViewModel.startSession()
+                                } else {
+                                    cameraViewModel.startStreaming()
+                                }
+                            }
+                        }
+                    )
+                }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -204,6 +260,28 @@ fun VoiceAssistantScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
             }
+        }
+
+        if (cameraUi.showCameraPermissionRedirectConfirm) {
+            AlertDialog(
+                onDismissRequest = { cameraViewModel.cancelCameraPermissionRedirect() },
+                title = { Text(stringResource(R.string.camera_permission_redirect_title)) },
+                text = { Text(stringResource(R.string.camera_permission_redirect_message)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            cameraViewModel.confirmCameraPermissionRedirect(onRequestWearablesPermission)
+                        }
+                    ) {
+                        Text(stringResource(R.string.camera_permission_continue))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { cameraViewModel.cancelCameraPermissionRedirect() }) {
+                        Text(stringResource(R.string.camera_permission_cancel))
+                    }
+                },
+            )
         }
     }
 }
@@ -347,6 +425,67 @@ private fun AudioDeviceBadge(isGlassesMic: Boolean) {
                 style = MaterialTheme.typography.labelMedium,
                 color = if (isGlassesMic) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CameraStatusBadge(
+    isStreaming: Boolean,
+    isStarting: Boolean,
+    isGlassesConnected: Boolean,
+    onClick: () -> Unit,
+) {
+    val backgroundColor: Color
+    val contentColor: Color
+    val icon: ImageVector
+    val textRes: Int
+
+    when {
+        !isGlassesConnected -> {
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            icon = Icons.Default.VideocamOff
+            textRes = R.string.assistant_camera_disconnected
+        }
+        isStarting -> {
+            backgroundColor = MaterialTheme.colorScheme.tertiaryContainer
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            icon = Icons.Default.Videocam
+            textRes = R.string.assistant_camera_starting
+        }
+        isStreaming -> {
+            // Estilo do indicador de privacidade de câmera nativo do Android (verde vibrante)
+            backgroundColor = Color(0xFF2E7D32)
+            contentColor = Color.White
+            icon = Icons.Default.Videocam
+            textRes = R.string.assistant_camera_active
+        }
+        else -> {
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            icon = Icons.Default.VideocamOff
+            textRes = R.string.assistant_camera_inactive
+        }
+    }
+
+    Surface(
+        shape = CircleShape,
+        color = backgroundColor,
+        onClick = onClick,
+        enabled = isGlassesConnected && !isStarting,
+        modifier = Modifier.size(32.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = stringResource(textRes),
+                tint = contentColor,
+                modifier = Modifier.size(18.dp),
             )
         }
     }

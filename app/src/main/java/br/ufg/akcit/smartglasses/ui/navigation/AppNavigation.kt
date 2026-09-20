@@ -24,6 +24,7 @@ fun AppNavigation(
         composable("assistant") {
             VoiceAssistantScreen(
                 wearablesViewModel = viewModel,
+                onRequestWearablesPermission = onRequestWearablesPermission,
                 onRequestRecordAudioPermission = onRequestRecordAudioPermission,
                 onNavigateToCamera = { navController.navigate("camera") },
                 onNavigateToFeatures = { navController.navigate("features") },
