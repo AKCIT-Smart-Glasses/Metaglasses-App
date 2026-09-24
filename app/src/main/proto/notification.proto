@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package metaglass;
+
+option java_package = "com.metaglass.proto";
+option java_outer_classname = "NotificationProto";
+option java_multiple_files = true;
+
+// ══════════════════════════════════════════════════════════════
+//  NOTIFICATIONS — the only channel the SERVER starts
+// ══════════════════════════════════════════════════════════════
+//  Every other RPC in this API is client-initiated: the glasses
+//  ask, the orchestrator answers. This one inverts it, so the
+//  assistant can speak without being asked — a medication
+//  reminder at its hour, or the name of the person in front of
+//  the wearer before they have to admit they do not know it.
+//
+//  The client opens ONE subscription for the life of the session
+//  and plays whatever arrives. The audio is already synthesized
+//  server-side, which is what lets the client stay a dumb pipe
+//  with no model credentials of its own.
+service Notifications {
+
+  // Long-lived server stream. The client resubscribes on drop;
+  // the server releases the stream when the peer goes away.
+  rpc Subscribe(SubscribeRequest) returns (stream Notification);
+}
+
+// ── Subscribe ──────────────────────────────────────────────────────
+message SubscribeRequest {
+  string session_id = 1;
+}
+
+message Notification {
+  // What kind of thing this is. "reminder" or "holding" (e.g. while thinking)
+  string type = 1;
+
+  // What to say, in pt-BR. ALWAYS present: the client shows this
+  // even when synthesis failed and `audio` is empty.
+  string text = 2;
+
+  // The line already spoken by the orchestrator. Empty when TTS is
+  // off or failed — degrade to `text`, never to silence.
+  bytes audio = 3;
+  string audio_mime_type = 4;
+
+  // ISO-8601 instant, for display only. Nothing filters on it.
+  string created_at = 5;
+}

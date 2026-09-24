@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package metaglass;
+
+option java_package = "com.metaglass.proto";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+
+// ── Standardized status ────────────────────────────────────────────
+enum StatusCode {
+  STATUS_CODE_UNSPECIFIED = 0;
+  STATUS_CODE_OK = 1;
+  STATUS_CODE_ERROR = 2;
+  STATUS_CODE_PARTIAL = 3;            // response still in progress
+  STATUS_CODE_RATE_LIMITED = 4;
+  STATUS_CODE_AGENT_UNAVAILABLE = 5;
+}
+
+message Status {
+  StatusCode code = 1;
+  string message = 2;
+}
+
+// ── Generic multimodal payload ─────────────────────────────────────
+message MediaPayload {
+  bytes data = 1;                     // raw bytes (opus audio, jpeg frame, utf-8 text, etc.)
+  string mime_type = 2;               // "audio/opus", "image/jpeg", "video/h264", "text/plain"
+
+  // Free-form modality-specific attributes:
+  //   audio: {"sample_rate": "48000", "duration_ms": "1500", "channels": "2"}
+  //   image: {"width": "1920", "height": "1080"}
+  //   video: {"width": "1920", "height": "1080", "fps": "30", "duration_ms": "5000"}
+  map<string, string> metadata = 3;
+}
+
+// ── Session state ──────────────────────────────────────────────────
+enum SessionState {
+  SESSION_STATE_UNSPECIFIED = 0;
+  SESSION_STATE_ACTIVE = 1;
+  SESSION_STATE_LOST = 2;
+  SESSION_STATE_CLOSED = 3;
+}

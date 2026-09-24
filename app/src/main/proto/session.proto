@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package metaglass;
+
+option java_package = "com.metaglass.proto";
+option java_outer_classname = "SessionProto";
+option java_multiple_files = true;
+
+import "common.proto";
+
+// ══════════════════════════════════════════════════════════════
+//  SESSION — Connection lifecycle management
+// ══════════════════════════════════════════════════════════════
+service Session {
+
+  // Registers a new device (glasses).
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
+
+  // Creates a new user profile.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Opens a session — loads user profile, recent history (Postgres),
+  // and semantic context (Qdrant).
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+
+  // Periodic heartbeat from middleware to keep the session alive.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Gracefully closes the session — flushes context to the datalake.
+  rpc EndSession(EndSessionRequest) returns (EndSessionResponse);
+
+  // Retrieves session state (useful after glasses reconnection).
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+}
+
+// ── CreateUser ─────────────────────────────────────────────────────
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string preferred_language = 3;
+  string device_id = 4;
+  map<string, string> metadata = 5;
+}
+
+message CreateUserResponse {
+  Status status = 1;
+  string user_id = 2;
+}
+
+// ── RegisterDevice ─────────────────────────────────────────────────
+message RegisterDeviceRequest {
+  string device_name = 1;
+  string device_model = 2;
+  map<string, string> metadata = 3;
+}
+
+message RegisterDeviceResponse {
+  Status status = 1;
+  string device_id = 2;
+}
+
+// ── CreateSession ──────────────────────────────────────────────────
+message CreateSessionRequest {
+  string user_id = 1;
+  map<string, string> initial_metadata = 3;
+}
+
+message CreateSessionResponse {
+  Status status = 1;
+  string session_id = 2;
+}
+
+// ── Heartbeat ──────────────────────────────────────────────────────
+message HeartbeatRequest {
+  string session_id = 1;
+  int64 timestamp_ms = 2;
+  map<string, string> metrics = 3;
+}
+
+message HeartbeatResponse {
+  Status status = 1;
+}
+
+// ── EndSession ─────────────────────────────────────────────────────
+message EndSessionRequest {
+  string session_id = 1;
+}
+
+message EndSessionResponse {
+  Status status = 1;
+}
+
+// ── GetSession ─────────────────────────────────────────────────────
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionResponse {
+  Status status = 1;
+  string session_id = 2;
+  string user_id = 3;
+  SessionState state = 4;
+}

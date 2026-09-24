@@ -13,7 +13,7 @@
 // devices.
 //
 // MockDeviceInfo encapsulates:
-// - device: MockRaybanMeta instance from DAT MockDeviceKit API
+// - device: MockGlasses instance from DAT MockDeviceKit API
 // - deviceId: UI identifier for tracking multiple mock devices
 // - deviceName: Display name for the simulated device
 // - hasCameraFeed: Whether mock video content has been configured
@@ -22,11 +22,11 @@
 
 package br.ufg.akcit.smartglasses.mockdevicekit
 
-import com.meta.wearable.dat.mockdevice.api.MockRaybanMeta
+import com.meta.wearable.dat.mockdevice.api.MockGlasses
 import com.meta.wearable.dat.mockdevice.api.camera.CameraFacing
 
 data class MockDeviceInfo(
-    val device: MockRaybanMeta,
+    val device: MockGlasses,
     val deviceId: String,
     val deviceName: String,
     val hasCameraFeed: Boolean = false,

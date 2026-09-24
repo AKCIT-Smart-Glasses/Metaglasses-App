@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" project="cameraaccess">
+
+    <!-- App -->
+    <string name="app_name" description="Launcher label / app name">Smart Glasses</string>
+
+    <!-- App chrome -->
+    <string name="scaffold_error_icon_description" description="Content description for the error snackbar icon">Erro do Camera Access</string>
+    <string name="debug_menu_description" description="Content description for the debug menu button">Menu de depuração</string>
+
+    <!-- Home Screen -->
+    <string name="register_button_title" description="Connect App">Conectar meus óculos</string>
+    <string name="home_redirect_message" description="Redirect message">Você será redirecionado para o app Meta AI para confirmar sua conexão.</string>
+    <string name="home_tip_session_title" description="Tip title about starting a session">Inicie uma sessão</string>
+    <string name="home_tip_session" description="Tip about starting a session">Conecte-se aos seus óculos para começar.</string>
+    <string name="home_tip_preview_title" description="Tip title about preview">Iniciar prévia</string>
+    <string name="home_tip_preview" description="Tip about preview">Veja a transmissão ao vivo da câmera dos seus óculos.</string>
+    <string name="home_tip_capture_title" description="Tip title about capture">Capturar</string>
+    <string name="home_tip_capture" description="Tip about capture">Tire fotos e grave vídeos com áudio.</string>
+    <string name="home_tip_video_title" description="Tip title about video capture">Captura de Vídeo</string>
+    <string name="home_tip_audio_title" description="Tip title about audio">Áudio Open-Ear</string>
+    <string name="home_tip_hands_title" description="Tip title about hands free">Aproveite em Movimento</string>
+    <string name="home_tip_video" description="Tip about video capture">Grave vídeos diretamente dos seus óculos, a partir do seu ponto de vista.</string>
+    <string name="home_tip_audio" description="Tip about audio">Ouça notificações enquanto mantém seus ouvidos abertos para o mundo ao seu redor.</string>
+    <string name="home_tip_hands" description="Tip about hands free">Fique com as mãos livres enquanto se movimenta ao longo do dia. Mova-se livremente, mantenha-se conectado.</string>
+    <string name="error_activity_unavailable" description="Error shown when registration is tapped but no activity is available">Não é possível abrir agora. Tente novamente.</string>
+
+    <!-- Camera Screen -->
+    <string name="camera_access_icon_description" description="Camera Access icon description">Ícone do Camera Access</string>
+    <string name="live_preview" description="Live preview content description">Prévia ao vivo</string>
+    <string name="live_stream" description="Live Stream">Transmissão ao vivo</string>
+    <string name="waiting_for_active_device" description="Waiting for active device message">Aguardando um dispositivo ativo</string>
+    <string name="status_session" description="Session status chip label">Sessão</string>
+    <string name="status_stream" description="Stream status chip label">Transmissão</string>
+    <string name="unregister_button_title" description="Disconnect App">Desconectar</string>
+
+    <!-- Placeholder states -->
+    <string name="placeholder_put_on_glasses" description="Placeholder when no active device">Coloque seus óculos</string>
+    <string name="placeholder_ready_title" description="Placeholder when ready to start a session">Pronto</string>
+    <string name="placeholder_ready_subtitle" description="Placeholder subtitle when ready">Inicie uma sessão para se conectar aos seus óculos.</string>
+    <string name="placeholder_session_started_title" description="Placeholder when session is started">Sessão iniciada</string>
+    <string name="placeholder_session_started_subtitle" description="Placeholder subtitle when session is started">Inicie a prévia para ver a transmissão da câmera ao vivo.</string>
+    <string name="paused_title" description="Badge shown over the frozen preview when the glasses pause the stream">Pausado</string>
+    <string name="paused_subtitle" description="Instruction telling the user how to resume a paused stream">Toque nos seus óculos para retomar.</string>
+
+    <!-- Capture controls -->
+    <string name="preview_label" description="Preview toggle label">Prévia</string>
+    <string name="start_preview" description="Start preview content description">Iniciar prévia</string>
+    <string name="stop_preview" description="Stop preview content description">Parar prévia</string>
+    <string name="record_label" description="Record button label">Gravar</string>
+    <string name="record_video" description="Record video content description">Gravar vídeo</string>
+    <string name="stop_recording" description="Stop recording content description">Parar gravação</string>
+    <string name="capture_photo" description="Capture photo content description">Capturar foto</string>
+    <string name="mic_on" description="Microphone on content description">Desativar microfone</string>
+    <string name="mic_off" description="Microphone off content description">Ativar microfone</string>
+    <string name="start_session_button" description="Start session button">Iniciar sessão</string>
+    <string name="end_session_button" description="End session button">Encerrar sessão</string>
+
+    <!-- Update required -->
+    <string name="update_firmware_button_title" description="Open firmware update">Atualizar firmware</string>
+    <string name="update_dat_app_button_title" description="Open DAT app update on glasses">Atualizar app nos óculos</string>
+    <string name="update_required_title" description="Update required warning title">Atualização necessária</string>
+    <string name="update_required_subtitle" description="Update required placeholder subtitle">Aplique a atualização para iniciar sua câmera.</string>
+    <string name="update_required_firmware_message" description="Firmware update required warning">Seus óculos precisam de uma atualização de firmware antes que o Camera Access possa iniciar.</string>
+    <string name="update_required_dat_app_message" description="DAT app update required warning">O app nos seus óculos precisa de uma atualização antes que o Camera Access possa iniciar.</string>
+    <string name="update_required_both_message" description="Firmware and DAT app update required warning">O firmware e o app dos seus óculos precisam de atualizações antes que o Camera Access possa iniciar.</string>
+
+    <!-- Camera permission redirect -->
+    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Permitir acesso à câmera</string>
+    <string name="camera_permission_redirect_message" description="Camera permission redirect message">Para pré-visualizar a câmera dos seus óculos, você será direcionado ao app Meta AI para conceder acesso e depois retornará aqui.</string>
+    <string name="camera_permission_continue" description="Camera permission continue button">Continuar</string>
+    <string name="camera_permission_cancel" description="Camera permission cancel button">Cancelar</string>
+
+    <!-- Capture Preview -->
+    <string name="photo_captured" description="Photo Captured">Foto Capturada</string>
+    <string name="captured_photo" description="Captured photo content description">Foto capturada</string>
+    <string name="share" description="Share">Compartilhar</string>
+    <string name="close_preview" description="Close preview content description">Fechar</string>
+
+    <!-- Camera errors -->
+    <string name="error_start_session_first" description="Error shown when previewing before a session is started">Inicie uma sessão antes de visualizar a prévia.</string>
+    <string name="error_camera_permission_denied" description="Error shown when camera permission is denied">Permissão de câmera negada</string>
+    <string name="error_photo_capture_failed" description="Error shown when a photo capture fails">Não foi possível capturar a foto. Tente novamente.</string>
+    <string name="error_recording_too_short" description="Error shown when a recording stops before any video is captured">Não foi possível gravar. Segure um pouco mais e tente novamente.</string>
+    <string name="error_recording_save_failed" description="Error shown when a recording cannot be finalized">A gravação não pôde ser salva. Tente novamente.</string>
+
+    <!-- Wearables errors -->
+    <string name="error_device_update_required" description="Error shown when a connected device needs a firmware update"><xliff:g id="device_name">%1$s</xliff:g> precisa de uma atualização para funcionar com este aplicativo.</string>
+    <string name="error_permissions_required" description="Error shown when required Android permissions are denied">Permita o Bluetooth, conexão Bluetooth e permissões de internet.</string>
+
+    <!-- Streaming notification -->
+    <string name="notification_channel_name" description="Streaming notification channel name">Transmissão da câmera</string>
+    <string name="notification_channel_description" description="Streaming notification channel description">Notificações para transmissão ativa da câmera</string>
+    <string name="notification_title" description="Streaming notification title">Transmissão da câmera</string>
+    <string name="notification_body" description="Streaming notification body">Transmitindo a partir dos seus óculos.</string>
+
+    <!-- Mock Device Kit Screen -->
+    <string name="mock_device_kit_title" description="MockDeviceKit title">MockDeviceKit</string>
+    <string name="mock_device_name" description="Display name for a paired mock device">Óculos simulados</string>
+    <string name="devices_paired_count" description="Number of devices paired"><xliff:g id="count">%1$d</xliff:g> dispositivo(s) pareado(s)</string>
+    <string name="mock_device_kit_description" description="MockDeviceKit description">Esta tela simula dispositivos e mocka suas funcionalidades e estados.</string>
+    <string name="enable_mock_device_kit" description="Enable MockDeviceKit button">Ativar MockDeviceKit</string>
+    <string name="disable_mock_device_kit" description="Disable MockDeviceKit button">Desativar MockDeviceKit</string>
+    <string name="pair_rayban_meta" description="Pair Ray-Ban Meta">Parear Ray-Ban Meta</string>
+    <string name="unpair" description="Unpair">Desparear</string>
+    <string name="select_image" description="Select image">Selecionar imagem</string>
+    <string name="has_captured_image" description="Has captured image">Possui imagem capturada</string>
+    <string name="front_camera" description="Front camera">Câmera frontal</string>
+    <string name="back_camera" description="Back camera">Câmera traseira</string>
+    <string name="camera_source_label" description="Camera source dropdown label">Fonte da câmera: <xliff:g id="source">%1$s</xliff:g></string>
+    <string name="camera_source_none" description="Camera source none">Nenhuma</string>
+    <string name="camera_source_video_file" description="Camera source video file">Arquivo de vídeo</string>
+    <string name="power" description="Power toggle label">Energia</string>
+    <string name="donned" description="Donned toggle label">Vestido</string>
+    <string name="unfolded" description="Unfolded toggle label">Desdobrado</string>
+    <string name="captouch_section_title" description="Section label for the capacitive touch gesture buttons">Eventos de toque capacitivo</string>
+    <string name="captouch_tap" description="Button that simulates a single tap gesture on the glasses">Toque</string>
+    <string name="captouch_tap_and_hold" description="Button that simulates a tap-and-hold gesture on the glasses">Toque e segure</string>
+
+    <!-- Camera Permission Alert (MockDeviceKit camera source) -->
+    <string name="camera_permission_alert_title" description="Camera permission alert title">Acesso à câmera necessário</string>
+    <string name="camera_permission_alert_message" description="Camera permission alert message">O acesso à câmera foi negado. Ative-o nas Configurações para usar a fonte de câmera.</string>
+    <string name="camera_permission_open_settings" description="Camera permission open settings button">Abrir Configurações</string>
+
+    <!-- Getting Started Sheet -->
+    <string name="getting_started_title" description="Getting Started sheet title">Primeiros passos</string>
+    <string name="getting_started_tip_permission" description="Tip about camera permission">Primeiro, o Camera Access precisa de permissão para usar a câmera dos seus óculos.</string>
+    <string name="getting_started_tip_led" description="Tip about capture LED">O LED de captura avisa os outros quando você está capturando conteúdo ou ao vivo.</string>
+    <string name="getting_started_tip_photo" description="Tip about photo capture">Capture fotos tocando no botão da câmera.</string>
+    <string name="getting_started_continue" description="Continue button">Continuar</string>
+
+    <!-- Experimental Features -->
+    <string name="experimental_features_title" description="Title for experimental features screen">Recursos Experimentais</string>
+    <string name="back" description="Back button content description">Voltar</string>
+    <string name="glasses_microphone_title" description="Glasses microphone card title">Microfone dos Óculos</string>
+    <string name="recording_badge" description="Recording badge text">GRAVANDO</string>
+    <string name="recording_active_desc" description="Description when audio recording is active">Capturando áudio via Bluetooth SCO dos seus smartglasses. Fale normalmente.</string>
+    <string name="recording_idle_desc" description="Description when audio recording is idle">Grave áudio diretamente através dos microfones integrados dos seus óculos inteligentes.</string>
+    <string name="start_audio_recording" description="Start audio recording button">Iniciar Gravação</string>
+    <string name="stop_audio_recording" description="Stop audio recording button">Parar Gravação</string>
+    <string name="default_audio_filename" description="Default audio file name">audio.m4a</string>
+    <string name="player_status_playing" description="Audio player playing status">Reproduzindo...</string>
+    <string name="player_status_paused" description="Audio player paused status">Pausado</string>
+    <string name="player_status_ready" description="Audio player ready status">Gravação pronta</string>
+    <string name="player_rewind_desc" description="Rewind 5 seconds content description">Voltar 5 segundos</string>
+    <string name="player_forward_desc" description="Forward 5 seconds content description">Avançar 5 segundos</string>
+    <string name="player_stop_desc" description="Stop audio playback content description">Parar áudio</string>
+    <string name="player_pause_desc" description="Pause audio playback content description">Pausar áudio</string>
+    <string name="player_play_desc" description="Play audio playback content description">Reproduzir áudio</string>
+    <string name="audio_output_info" description="Audio output boost badge">Áudio via Bluetooth / Alto-falante (+15 dB boost ativo)</string>
+
+    <!-- Voice Assistant -->
+    <string name="assistant_title" description="Voice Assistant screen title">Assistente Inteligente</string>
+    <string name="assistant_state_ready" description="Status when assistant is ready for tap">Pronto para Ouvir</string>
+    <string name="assistant_state_ready_desc" description="Instruction to start assistant">Toque no microfone para fazer uma pergunta</string>
+    <string name="assistant_state_off" description="Status when assistant is turned off">Assistente Desligado</string>
+    <string name="assistant_state_off_desc" description="Instruction to start assistant">Toque no botão central para começar a ouvir</string>
+    <string name="assistant_state_initializing" description="Status when voice model is initializing">Inicializando modelo de voz…</string>
+    <string name="assistant_state_listening_wakeword" description="Status when listening for wake word">Ouvindo… Diga \"Olá Óculos\" ou toque para falar</string>
+    <string name="assistant_state_listening_command" description="Status when listening for command">Ouvindo sua dúvida… Fale agora</string>
+    <string name="assistant_state_listening_command_desc" description="Status hint when listening">O silêncio enviará sua pergunta automaticamente</string>
+    <string name="assistant_state_processing" description="Status when processing command">Processando sua pergunta…</string>
+    <string name="assistant_state_speaking" description="Status when assistant is speaking">Assistente respondendo…</string>
+    <string name="assistant_state_error" description="Status when audio error occurs">Erro no áudio</string>
+    <string name="assistant_btn_talk" description="Tap to speak button accessibility">Tocar para fazer pergunta</string>
+    <string name="assistant_btn_finish_listening" description="Tap to finish speaking">Finalizar pergunta</string>
+    <string name="assistant_btn_stop_speaking" description="Tap to interrupt speaking">Parar resposta</string>
+    <string name="assistant_btn_turn_on" description="Turn on assistant accessibility description">Ligar assistente de voz</string>
+    <string name="assistant_btn_turn_off" description="Turn off assistant accessibility description">Desligar assistente de voz</string>
+    <string name="assistant_hands_free_label" description="Hands-free toggle label">Modo Mãos-Livres</string>
+    <string name="assistant_hands_free_desc" description="Hands-free mode active description">Ouvindo \"Olá Óculos\" em segundo plano</string>
+    <string name="assistant_open_camera" description="Open camera button">Câmera</string>
+    <string name="assistant_mic_glasses_active" description="Glasses microphone active badge">Microfone dos óculos ativo</string>
+    <string name="assistant_mic_phone_active" description="Phone microphone active badge">Microfone do celular ativo</string>
+    <string name="assistant_last_command_label" description="Last recognized command label">Sua pergunta</string>
+    <string name="elo_notification_label" description="Label above the last reminder notification received">Última notificação</string>
+    <string name="elo_notification_channel_name" description="Elo session notification channel name">Assistente inteligente</string>
+    <string name="elo_notification_channel_description" description="Elo session notification channel description">Mantém a conexão com o assistente e notificações ativas em segundo plano</string>
+    <string name="elo_notification_title" description="Elo session notification title">Assistente conectado</string>
+    <string name="elo_notification_body" description="Elo session notification body">Conectado — notificações e respostas serão faladas mesmo com a tela apagada.</string>
+
+    <!-- Server Settings & Menu -->
+    <string name="settings_screen_title" description="Server Settings screen title">Configurações do Servidor</string>
+    <string name="settings_server_host_label" description="Orchestrator Host label">Host do Orquestrador (IP ou domínio)</string>
+    <string name="settings_server_port_label" description="Orchestrator Port label">Porta</string>
+    <string name="settings_save_and_connect" description="Save and connect button">Salvar e Conectar</string>
+    <string name="settings_restore_default" description="Restore default button">Restaurar Padrão</string>
+    <string name="settings_connection_status_title" description="Connection status section title">Status da Conexão</string>
+    <string name="settings_emulator_tip" description="Tip for emulator">Emulador Android: 10.0.2.2</string>
+    <string name="settings_physical_device_tip" description="Tip for physical device">Celular Físico: IP do PC na rede Wi-Fi (ex: 192.168.x.x)</string>
+    <string name="settings_reset_identity_title" description="Reset identity title">Identidade do Dispositivo</string>
+    <string name="settings_reset_identity_desc" description="Reset identity description">Limpa os UUIDs de dispositivo e usuário registrados no orquestrador</string>
+    <string name="settings_reset_identity_button" description="Reset identity button">Redefinir Identidade</string>
+    <string name="settings_saved_toast" description="Settings saved toast">Configurações do servidor atualizadas</string>
+    <string name="settings_reset_identity_toast" description="Identity reset toast">Identidade do dispositivo redefinida</string>
+    <string name="menu_camera" description="Menu item Camera">Câmera</string>
+    <string name="menu_experimental_features" description="Menu item Experimental Features">Recursos Experimentais</string>
+    <string name="menu_settings" description="Menu item Settings">Configurações do Servidor</string>
+    <string name="menu_disconnect" description="Menu item Disconnect">Desconectar Óculos</string>
+    <string name="assistant_camera_active" description="Glasses camera active badge">Câmera ativa</string>
+    <string name="assistant_camera_inactive" description="Camera paused badge">Câmera pausada</string>
+    <string name="assistant_camera_starting" description="Camera starting badge">Iniciando câmera...</string>
+    <string name="assistant_camera_disconnected" description="Camera disconnected badge">Câmera desconectada</string>
+</resources>
