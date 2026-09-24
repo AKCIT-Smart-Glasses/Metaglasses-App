@@ -658,14 +658,13 @@ class VoiceSessionManager(
             val photo = photoCapture?.capturePhoto()
             Log.d(tag, "Captured photo: ${if (photo != null) "${photo.width}x${photo.height}" else "none"}")
 
-            // 3. Assemble MediaPayload (text/plain + audio/wav + optional image/jpeg)
+            // 3. Assemble MediaPayload (audio/wav + optional image/jpeg)
             val payloads = PayloadBuilder.buildQueryPayloads(
                 wavBytes = wavBytes,
                 sampleRate = sampleRate.toInt(),
                 photo = photo,
-                commandText = commandTextHint,
             )
-            Log.d(tag, "Calling Agent.Interact with ${payloads.size} payload(s), wavBytes=${wavBytes.size}, commandText=\"$commandTextHint\", sessionId=$sessionId")
+            Log.d(tag, "Calling Agent.Interact with ${payloads.size} payload(s), wavBytes=${wavBytes.size}, sessionId=$sessionId")
 
             // 4. Call Agent.Interact RPC
             val result = container.agentApi.interact(sessionId, payloads)
