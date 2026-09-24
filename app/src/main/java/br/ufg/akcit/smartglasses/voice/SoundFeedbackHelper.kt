@@ -67,6 +67,17 @@ class SoundFeedbackHelper {
         }
     }
 
+    /**
+     * Plays a cancellation tone (e.g. user cancelled listening or interrupted response).
+     */
+    fun playCancelTone() {
+        try {
+            toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 120)
+        } catch (e: Exception) {
+            Log.e(tag, "Error playing cancel tone", e)
+        }
+    }
+
     fun release() {
         toneGenerator?.release()
         toneGenerator = null

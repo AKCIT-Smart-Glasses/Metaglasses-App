@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.LinkOff
@@ -554,7 +555,8 @@ private fun CentralAssistantButton(
     )
 
     val accessibilityDesc = when (state) {
-        VoiceSessionState.LISTENING_COMMAND -> stringResource(R.string.assistant_btn_finish_listening)
+        VoiceSessionState.LISTENING_COMMAND -> stringResource(R.string.assistant_btn_cancel_listening)
+        VoiceSessionState.PROCESSING -> stringResource(R.string.assistant_btn_cancel_processing)
         VoiceSessionState.SPEAKING -> stringResource(R.string.assistant_btn_stop_speaking)
         else -> stringResource(R.string.assistant_btn_talk)
     }
@@ -595,11 +597,26 @@ private fun CentralAssistantButton(
             contentAlignment = Alignment.Center,
         ) {
             when (state) {
-                VoiceSessionState.INITIALIZING, VoiceSessionState.PROCESSING -> {
+                VoiceSessionState.INITIALIZING -> {
                     CircularProgressIndicator(
                         color = contentColor,
                         modifier = Modifier.size(48.dp),
                     )
+                }
+                VoiceSessionState.PROCESSING -> {
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            color = contentColor,
+                            modifier = Modifier.size(56.dp),
+                            strokeWidth = 3.dp,
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
                 VoiceSessionState.SPEAKING -> {
                     Icon(
@@ -656,6 +673,8 @@ private fun StatusMessageSection(
         val subtitleText = when (state) {
             VoiceSessionState.IDLE -> stringResource(R.string.assistant_state_ready_desc)
             VoiceSessionState.LISTENING_COMMAND -> stringResource(R.string.assistant_state_listening_command_desc)
+            VoiceSessionState.PROCESSING -> stringResource(R.string.assistant_state_processing_desc)
+            VoiceSessionState.SPEAKING -> stringResource(R.string.assistant_state_speaking_desc)
             VoiceSessionState.LISTENING_WAKE_WORD -> stringResource(R.string.assistant_hands_free_desc)
             else -> null
         }

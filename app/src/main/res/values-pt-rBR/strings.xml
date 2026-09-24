@@ -158,12 +158,16 @@
     <string name="assistant_state_initializing" description="Status when voice model is initializing">Inicializando modelo de voz…</string>
     <string name="assistant_state_listening_wakeword" description="Status when listening for wake word">Ouvindo… Diga \"Olá Óculos\" ou toque para falar</string>
     <string name="assistant_state_listening_command" description="Status when listening for command">Ouvindo sua dúvida… Fale agora</string>
-    <string name="assistant_state_listening_command_desc" description="Status hint when listening">O silêncio enviará sua pergunta automaticamente</string>
+    <string name="assistant_state_listening_command_desc" description="Status hint when listening">Toque no botão para cancelar ou aguarde o silêncio para enviar</string>
     <string name="assistant_state_processing" description="Status when processing command">Processando sua pergunta…</string>
+    <string name="assistant_state_processing_desc" description="Status hint when processing">Toque no botão para cancelar</string>
     <string name="assistant_state_speaking" description="Status when assistant is speaking">Assistente respondendo…</string>
+    <string name="assistant_state_speaking_desc" description="Status hint when speaking">Toque no botão para interromper</string>
     <string name="assistant_state_error" description="Status when audio error occurs">Erro no áudio</string>
     <string name="assistant_btn_talk" description="Tap to speak button accessibility">Tocar para fazer pergunta</string>
     <string name="assistant_btn_finish_listening" description="Tap to finish speaking">Finalizar pergunta</string>
+    <string name="assistant_btn_cancel_listening" description="Tap to cancel listening">Cancelar pergunta</string>
+    <string name="assistant_btn_cancel_processing" description="Tap to cancel processing">Cancelar processamento</string>
     <string name="assistant_btn_stop_speaking" description="Tap to interrupt speaking">Parar resposta</string>
     <string name="assistant_btn_turn_on" description="Turn on assistant accessibility description">Ligar assistente de voz</string>
     <string name="assistant_btn_turn_off" description="Turn off assistant accessibility description">Desligar assistente de voz</string>

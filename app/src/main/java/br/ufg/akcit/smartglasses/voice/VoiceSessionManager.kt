@@ -22,6 +22,7 @@ import br.ufg.akcit.smartglasses.elo.audio.WavWriter
 import br.ufg.akcit.smartglasses.elo.session.ConnectionState
 import br.ufg.akcit.smartglasses.elo.turn.PayloadBuilder
 import br.ufg.akcit.smartglasses.elo.turn.PhotoCapture
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -96,11 +97,15 @@ class VoiceSessionManager(
     @Volatile
     private var requestDirectCommand: Boolean = false
     @Volatile
-    private var requestFinishEarly: Boolean = false
+    private var requestCancelCommand: Boolean = false
     @Volatile
     private var requestFollowUpCommand: Boolean = false
     @Volatile
     private var receivedAnswerNotification: Boolean = false
+    @Volatile
+    private var isCurrentTurnFollowUp: Boolean = false
+
+    private var processingJob: Job? = null
 
     init {
         // Monitor orchestrator connection state
@@ -141,7 +146,7 @@ class VoiceSessionManager(
 
     /**
      * Primary entry point for Criterion 6: Pushing / tapping the button directly
-     * triggers question collection.
+     * triggers question collection, or cancels/stops the active turn.
      */
     fun onMainButtonClicked() {
         when (_uiState.value.state) {
@@ -149,16 +154,16 @@ class VoiceSessionManager(
                 startDirectCommandListening()
             }
             VoiceSessionState.LISTENING_COMMAND -> {
-                // If user taps while listening, finish recording early and process
-                requestFinishEarly = true
+                // Tapping the Stop button while listening cancels recording and ends the turn
+                cancelCurrentCommand()
             }
             VoiceSessionState.SPEAKING -> {
-                // If user taps while speaking, interrupt response and return to IDLE
-                container.ttsPlayer.stop()
-                returnToIdleOrWakeWord()
+                // Tapping while speaking interrupts response, prevents follow-up, and returns to IDLE
+                cancelSpeaking()
             }
             VoiceSessionState.PROCESSING -> {
-                Log.d(tag, "Main button tapped while processing")
+                // Tapping while processing cancels the in-flight query and returns to IDLE
+                cancelProcessing()
             }
             VoiceSessionState.INITIALIZING -> {
                 Log.d(tag, "Main button tapped while initializing")
@@ -168,6 +173,43 @@ class VoiceSessionManager(
                 startDirectCommandListening()
             }
         }
+    }
+
+    /**
+     * Cancels the active speech recording and returns to IDLE / wake word standby.
+     */
+    fun cancelCurrentCommand() {
+        Log.d(tag, "Cancelling current command listening")
+        requestCancelCommand = true
+        requestFollowUpCommand = false
+        soundFeedback.playCancelTone()
+        returnToIdleOrWakeWord()
+    }
+
+    /**
+     * Interrupts TTS speech playback, cancels in-flight job, and prevents follow-up listening.
+     */
+    fun cancelSpeaking() {
+        Log.d(tag, "Cancelling assistant speech and ending turn")
+        requestFollowUpCommand = false
+        processingJob?.cancel()
+        processingJob = null
+        container.ttsPlayer.stop()
+        soundFeedback.playCancelTone()
+        returnToIdleOrWakeWord()
+    }
+
+    /**
+     * Cancels an in-flight query to the orchestrator.
+     */
+    fun cancelProcessing() {
+        Log.d(tag, "Cancelling in-flight processing")
+        requestFollowUpCommand = false
+        processingJob?.cancel()
+        processingJob = null
+        container.ttsPlayer.stop()
+        soundFeedback.playCancelTone()
+        returnToIdleOrWakeWord()
     }
 
     /**
@@ -264,10 +306,16 @@ class VoiceSessionManager(
     }
 
     fun stopSession() {
+        processingJob?.cancel()
+        processingJob = null
         listeningJob?.cancel()
         listeningJob = null
         container.ttsPlayer.stop()
         cleanupAudio()
+        requestDirectCommand = false
+        requestFollowUpCommand = false
+        requestCancelCommand = false
+        isCurrentTurnFollowUp = false
         _uiState.update {
             it.copy(
                 state = VoiceSessionState.IDLE,
@@ -327,10 +375,28 @@ class VoiceSessionManager(
         var lastSpeechTimestamp = 0L
 
         while (scope.isActive && _uiState.value.isSessionActive) {
+            // Check for command cancellation requested from UI button or voice
+            if (requestCancelCommand) {
+                requestCancelCommand = false
+                inCommandMode = false
+                hasSpoken = false
+                lastSpeechTimestamp = 0L
+                wavWriter.reset()
+                currentRecognizer.close()
+                currentRecognizer = if (_uiState.value.isHandsFreeWakeWordActive) {
+                    Recognizer(model, sampleRate, wakeWordGrammar)
+                } else {
+                    Recognizer(model, sampleRate)
+                }
+                returnToIdleOrWakeWord()
+                continue
+            }
+
             // Check for direct command request triggered from UI button
             if (requestDirectCommand && !inCommandMode) {
                 requestDirectCommand = false
                 inCommandMode = true
+                isCurrentTurnFollowUp = false
                 hasSpoken = false
                 lastSpeechTimestamp = 0L
                 commandStartTime = System.currentTimeMillis()
@@ -349,6 +415,7 @@ class VoiceSessionManager(
             if (requestFollowUpCommand) {
                 requestFollowUpCommand = false
                 inCommandMode = true
+                isCurrentTurnFollowUp = true
                 hasSpoken = false
                 lastSpeechTimestamp = 0L
                 commandStartTime = System.currentTimeMillis()
@@ -388,6 +455,7 @@ class VoiceSessionManager(
                             onWakeWordTriggered()
 
                             inCommandMode = true
+                            isCurrentTurnFollowUp = false
                             hasSpoken = false
                             lastSpeechTimestamp = 0L
                             commandStartTime = System.currentTimeMillis()
@@ -409,6 +477,7 @@ class VoiceSessionManager(
                             onWakeWordTriggered()
 
                             inCommandMode = true
+                            isCurrentTurnFollowUp = false
                             hasSpoken = false
                             lastSpeechTimestamp = 0L
                             commandStartTime = System.currentTimeMillis()
@@ -426,6 +495,22 @@ class VoiceSessionManager(
                     }
                 } else {
                     // STAGE 2: Listening for Command (Tap-to-Talk or after Wake Word)
+                    if (requestCancelCommand) {
+                        requestCancelCommand = false
+                        inCommandMode = false
+                        hasSpoken = false
+                        lastSpeechTimestamp = 0L
+                        wavWriter.reset()
+                        currentRecognizer.close()
+                        currentRecognizer = if (_uiState.value.isHandsFreeWakeWordActive) {
+                            Recognizer(model, sampleRate, wakeWordGrammar)
+                        } else {
+                            Recognizer(model, sampleRate)
+                        }
+                        returnToIdleOrWakeWord()
+                        continue
+                    }
+
                     // Accumulate raw PCM frames into the WAV writer
                     wavWriter.appendBytes(buffer, 0, readBytes)
 
@@ -448,15 +533,30 @@ class VoiceSessionManager(
                     // Check silence threshold after user has spoken
                     val silenceDuration = if (hasSpoken) now - lastSpeechTimestamp else 0L
                     val silenceDetected = hasSpoken && (silenceDuration >= silenceDurationMs)
-                    val finishEarly = requestFinishEarly
-                    requestFinishEarly = false
 
-                    if (silenceDetected || isFinal || finishEarly) {
+                    if (silenceDetected || isFinal) {
                         val resultText = extractTextFromJson(currentRecognizer.result).trim()
                         val finalCommandText = if (resultText.isNotBlank()) resultText else _uiState.value.partialTranscription.trim()
 
+                        if (isCancelCommand(finalCommandText)) {
+                            Log.d(tag, "Voice cancel command detected: \"$finalCommandText\"")
+                            soundFeedback.playCancelTone()
+                            wavWriter.reset()
+                            inCommandMode = false
+                            hasSpoken = false
+                            currentRecognizer.close()
+                            currentRecognizer = if (_uiState.value.isHandsFreeWakeWordActive) {
+                                Recognizer(model, sampleRate, wakeWordGrammar)
+                            } else {
+                                Recognizer(model, sampleRate)
+                            }
+                            returnToIdleOrWakeWord()
+                            continue
+                        }
+
                         if (finalCommandText.isNotBlank() || wavWriter.sampleCount > 0) {
-                            Log.d(tag, "Voice question captured: \"$finalCommandText\" (silence: ${silenceDuration}ms, early: $finishEarly)")
+                            val isExitTurn = isExitCommand(finalCommandText)
+                            Log.d(tag, "Voice question captured: \"$finalCommandText\" (silence: ${silenceDuration}ms, isExitTurn: $isExitTurn)")
                             soundFeedback.playConfirmTone()
                             _uiState.update {
                                 it.copy(
@@ -470,35 +570,40 @@ class VoiceSessionManager(
                             wavWriter.reset()
                             inCommandMode = false
 
-                            scope.launch {
+                            processingJob?.cancel()
+                            processingJob = scope.launch {
                                 processCommandWithOrchestrator(wavBytes, finalCommandText) { success ->
-                                    if (success) {
+                                    if (success && !isExitTurn) {
                                         requestFollowUpCommand = true
                                     } else {
                                         inCommandMode = false
                                         hasSpoken = false
                                         currentRecognizer.close()
-                                        currentRecognizer = Recognizer(model, sampleRate, wakeWordGrammar)
+                                        currentRecognizer = if (_uiState.value.isHandsFreeWakeWordActive) {
+                                            Recognizer(model, sampleRate, wakeWordGrammar)
+                                        } else {
+                                            Recognizer(model, sampleRate)
+                                        }
                                         returnToIdleOrWakeWord()
                                     }
                                 }
                             }
-                        } else if (finishEarly) {
+                        }
+                    } else {
+                        val speechTimeout = if (isCurrentTurnFollowUp) 5000L else initialSpeechTimeoutMs
+                        if (!hasSpoken && (now - commandStartTime >= speechTimeout)) {
+                            Log.d(tag, "Command listening timeout: no speech detected (timeout=${speechTimeout}ms)")
                             wavWriter.reset()
                             inCommandMode = false
                             hasSpoken = false
                             currentRecognizer.close()
-                            currentRecognizer = Recognizer(model, sampleRate, wakeWordGrammar)
+                            currentRecognizer = if (_uiState.value.isHandsFreeWakeWordActive) {
+                                Recognizer(model, sampleRate, wakeWordGrammar)
+                            } else {
+                                Recognizer(model, sampleRate)
+                            }
                             returnToIdleOrWakeWord()
                         }
-                    } else if (!hasSpoken && (now - commandStartTime >= initialSpeechTimeoutMs)) {
-                        Log.d(tag, "Command listening timeout: no speech detected")
-                        wavWriter.reset()
-                        inCommandMode = false
-                        hasSpoken = false
-                        currentRecognizer.close()
-                        currentRecognizer = Recognizer(model, sampleRate, wakeWordGrammar)
-                        returnToIdleOrWakeWord()
                     }
                 }
             }
@@ -606,6 +711,9 @@ class VoiceSessionManager(
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            Log.d(tag, "processCommandWithOrchestrator cancelled")
+            throw e
         } catch (e: Exception) {
             Log.e(tag, "Failed to process question with orchestrator", e)
             handleProcessingError(
@@ -638,6 +746,32 @@ class VoiceSessionManager(
                 lower.contains("hey assistente") ||
                 lower.contains("ei assistente") ||
                 lower.contains("assistente")
+    }
+
+    private fun isCancelCommand(text: String): Boolean {
+        if (text.isBlank()) return false
+        val lower = text.lowercase().trim().replace(Regex("[.,?!]"), "")
+        val cancelWords = listOf(
+            "cancelar", "cancela", "cancel",
+            "esquece", "esqueça",
+            "deixa pra lá", "deixa pra la", "deixa quieto",
+            "parar", "para",
+            "abortar", "aborta"
+        )
+        return cancelWords.any { lower == it || lower.startsWith("$it ") || lower.endsWith(" $it") }
+    }
+
+    private fun isExitCommand(text: String): Boolean {
+        if (text.isBlank()) return false
+        val lower = text.lowercase().trim().replace(Regex("[.,?!]"), "")
+        val exitPhrases = listOf(
+            "tchau", "tchau tchau", "adeus", "até mais", "ate mais", "até logo", "ate logo",
+            "só isso", "so isso", "era só isso", "era so isso",
+            "mais nada", "nada mais", "por hoje é só", "por hoje e so",
+            "obrigado tchau", "obrigada tchau", "valeu tchau",
+            "pode parar", "encerrar", "encerra", "terminar", "fim"
+        )
+        return exitPhrases.any { lower == it || lower.startsWith("$it ") || lower.endsWith(" $it") }
     }
 
     private fun extractTextFromJson(jsonString: String): String {

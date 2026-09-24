@@ -158,12 +158,16 @@
     <string name="assistant_state_initializing" description="Status when voice model is initializing">Initializing voice model…</string>
     <string name="assistant_state_listening_wakeword" description="Status when listening for wake word">Listening… Say \"Olá Óculos\" or tap to speak</string>
     <string name="assistant_state_listening_command" description="Status when listening for command">Listening… Speak now</string>
-    <string name="assistant_state_listening_command_desc" description="Status hint when listening">Silence will automatically submit your question</string>
+    <string name="assistant_state_listening_command_desc" description="Status hint when listening">Tap button to cancel or wait for silence to send</string>
     <string name="assistant_state_processing" description="Status when processing command">Processing question…</string>
+    <string name="assistant_state_processing_desc" description="Status hint when processing">Tap button to cancel</string>
     <string name="assistant_state_speaking" description="Status when assistant is speaking">Assistant is responding…</string>
+    <string name="assistant_state_speaking_desc" description="Status hint when speaking">Tap button to stop</string>
     <string name="assistant_state_error" description="Status when audio error occurs">Audio error</string>
     <string name="assistant_btn_talk" description="Tap to speak button accessibility">Tap to ask question</string>
     <string name="assistant_btn_finish_listening" description="Tap to finish speaking">Finish question</string>
+    <string name="assistant_btn_cancel_listening" description="Tap to cancel listening">Cancel question</string>
+    <string name="assistant_btn_cancel_processing" description="Tap to cancel processing">Cancel processing</string>
     <string name="assistant_btn_stop_speaking" description="Tap to interrupt speaking">Stop response</string>
     <string name="assistant_btn_turn_on" description="Turn on assistant accessibility description">Turn on voice assistant</string>
     <string name="assistant_btn_turn_off" description="Turn off assistant accessibility description">Turn off voice assistant</string>
