@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -94,6 +97,7 @@ private val TopScrimBrush =
     Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent))
 private val BottomScrimBrush =
     Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))
+private const val PREVIEW_ASPECT_RATIO = 9f / 16f
 
 @Composable
 fun CameraScreen(
@@ -224,7 +228,12 @@ private fun PreviewBackground(
       // SurfaceView-backed sink — drawn behind (default zOrder) so the scrim and controls
       // composite on top.
       AndroidExternalSurface(
-          modifier = Modifier.fillMaxSize().semantics { contentDescription = liveDescription }
+          modifier =
+              Modifier.align(Alignment.Center)
+                  .wrapContentWidth(align = Alignment.CenterHorizontally, unbounded = true)
+                  .fillMaxHeight()
+                  .aspectRatio(PREVIEW_ASPECT_RATIO, matchHeightConstraintsFirst = true)
+                  .semantics { contentDescription = liveDescription },
       ) {
         onSurface { surface, _, _ ->
           onSurfaceChanged(surface)

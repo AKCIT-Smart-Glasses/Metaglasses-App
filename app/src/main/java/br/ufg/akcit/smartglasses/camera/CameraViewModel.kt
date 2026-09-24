@@ -53,12 +53,16 @@ import br.ufg.akcit.smartglasses.wearables.WearablesViewModel
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,8 +118,34 @@ class CameraViewModel(
   private var streamStateJob: Job? = null
   private var streamErrorJob: Job? = null
 
+  // Offloads recording disk I/O from the per-frame collector so the on-screen decoder never stalls
+  // behind MediaMuxer writes.
+  private val recorderChannel = Channel<RecorderFrame>(capacity = Channel.UNLIMITED)
+
+  private data class RecorderFrame(
+      val data: ByteArray,
+      val presentationTimeUs: Long,
+      val width: Int,
+      val height: Int,
+      val isCodecConfig: Boolean,
+  )
+
   init {
     videoRecorder.setAudioInputHandler(audioInputHandler)
+
+    // Drain the recorder channel on an unconfined I/O thread so writing to disk never blocks the
+    // preview loop.
+    viewModelScope.launch(Dispatchers.IO) {
+      for (frame in recorderChannel) {
+        videoRecorder.writeCompressedFrame(
+            frame.data,
+            frame.presentationTimeUs,
+            frame.width,
+            frame.height,
+            frame.isCodecConfig,
+        )
+      }
+    }
 
     // Mirror the recorder's intent/elapsed into UI state.
     viewModelScope.launch {
@@ -128,14 +158,21 @@ class CameraViewModel(
         _uiState.update { it.copy(recordingElapsedSeconds = seconds) }
       }
     }
-    // Stop a recording gracefully if the mic is interrupted (e.g. a phone call).
     viewModelScope.launch {
-      audioInputHandler.wasInterrupted.collect { interrupted ->
-        if (interrupted && _uiState.value.isRecording) {
-          Log.w(TAG, "Audio interrupted — stopping recording")
-          stopVideoRecording()
+      videoRecorder.audioActive.collect { active ->
+        if (!active && videoRecorder.isRecording.value && _uiState.value.includeAudioInStream) {
+          _uiState.update { it.copy(includeAudioInStream = false) }
         }
       }
+    }
+
+    // Keyed on the same predicate the scaffold navigates on, so a cancelled unregistration — which
+    // reverts to REGISTERED — leaves an in-flight session untouched.
+    viewModelScope.launch {
+      wearablesViewModel.uiState
+          .map { it.isRegistered }
+          .distinctUntilChanged()
+          .collect { isRegistered -> if (!isRegistered) handleUnregistered() }
     }
   }
 
@@ -326,6 +363,17 @@ class CameraViewModel(
         _uiState.update { it.copy(streamState = state) }
         val isTerminal = state == StreamState.STOPPED || state == StreamState.CLOSED
         if (!isTerminal) {
+          if (!hasBeenActive && _uiState.value.includeAudioInStream) {
+            viewModelScope.launch {
+              try {
+                videoRecorder.prewarmGlassesAudio()
+              } catch (e: CancellationException) {
+                throw e
+              } catch (e: Exception) {
+                Log.e(TAG, "stream-active glasses audio prewarm failed", e)
+              }
+            }
+          }
           hasBeenActive = true
         } else if (hasBeenActive) {
           hasBeenActive = false
@@ -358,15 +406,7 @@ class CameraViewModel(
     // primed with a complete VPS+SPS+PPS set.
     csdCollector.offer(byteArray)
 
-    // Append to the recorder (no-op unless recording); keeps writing while backgrounded.
-    videoRecorder.writeCompressedFrame(
-        byteArray,
-        presentationTimeUs,
-        width,
-        height,
-        videoFrame.isCodecConfig,
-    )
-
+    // Feed the preview decoder first so recorder muxing never delays it.
     // Lazily create the decoder once a Surface is available; it renders directly to it. Prime it
     // with the cached config in case the surface arrived after the config frame. Guarded so a
     // concurrent setSurface(null) can't leave a decoder bound to a released Surface.
@@ -383,6 +423,13 @@ class CameraViewModel(
       hevcDecoder?.decodeFrame(byteArray, presentationTimeUs)
     }
 
+    // Hand off to the recorder thread; never blocks the preview.
+    if (videoRecorder.isRecording.value) {
+      recorderChannel.trySend(
+          RecorderFrame(byteArray, presentationTimeUs, width, height, videoFrame.isCodecConfig),
+      )
+    }
+
     if (!videoFrame.isCodecConfig && !_uiState.value.hasReceivedFirstFrame) {
       _uiState.update { it.copy(hasReceivedFirstFrame = true) }
     }
@@ -394,6 +441,13 @@ class CameraViewModel(
     viewModelScope.launch {
       if (_uiState.value.isRecording) {
         stopVideoRecording()
+      }
+      try {
+        videoRecorder.releaseGlassesAudioPrewarm()
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        Log.e(TAG, "onStreamTerminated glasses audio release failed", e)
       }
       clearStreamResources()
     }
@@ -502,7 +556,12 @@ class CameraViewModel(
         _uiState.update { it.copy(includeAudioInStream = false) }
       }
       videoRecorder.setIncludeAudio(includeAudio)
-      videoRecorder.startRecording(csdCollector.complete())
+      val audioEnabled = videoRecorder.startRecording(csdCollector.complete())
+      // Glasses HFP audio may be unavailable even with the mic on; flip the icon off so it doesn't
+      // imply audio is being captured.
+      if (includeAudio && !audioEnabled) {
+        _uiState.update { it.copy(includeAudioInStream = false) }
+      }
     }
   }
 
@@ -531,7 +590,18 @@ class CameraViewModel(
 
   fun toggleMic() {
     if (!_uiState.value.isStreaming || _uiState.value.isRecording) return
-    _uiState.update { it.copy(includeAudioInStream = !it.includeAudioInStream) }
+    val enabled = !_uiState.value.includeAudioInStream
+    _uiState.update { it.copy(includeAudioInStream = enabled) }
+    viewModelScope.launch {
+      try {
+        if (enabled) videoRecorder.prewarmGlassesAudio()
+        else videoRecorder.releaseGlassesAudioPrewarm()
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Exception) {
+        Log.e(TAG, "toggleMic glasses audio prewarm/release failed", e)
+      }
+    }
   }
 
   // MARK: - Dismissers
@@ -619,6 +689,18 @@ class CameraViewModel(
     return matrix
   }
 
+  // MARK: - Unregistration
+
+  /**
+   * Ends the session once the app is no longer registered. Unregistering does not stop a live
+   * [DeviceSession] — the SDK leaves that to the app — and this view model is scoped to the
+   * activity rather than the camera screen, so nothing else would tear the session down before the
+   * next registration brought the screen back mid-stream.
+   */
+  private fun handleUnregistered() {
+    session?.stop()
+  }
+
   override fun onCleared() {
     super.onCleared()
     clearStreamResources()
@@ -626,6 +708,7 @@ class CameraViewModel(
     cleanupSession()
     audioInputHandler.cleanup()
     videoRecorder.close()
+    recorderChannel.close()
   }
 
   class Factory(
