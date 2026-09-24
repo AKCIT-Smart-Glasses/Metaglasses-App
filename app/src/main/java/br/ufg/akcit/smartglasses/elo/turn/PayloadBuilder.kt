@@ -19,10 +19,25 @@ object PayloadBuilder {
   private const val CONTEXT_HINT_KEY = "context_hint"
   private const val CONTEXT_HINT_VALUE = "user_query"
 
-  fun buildQueryPayloads(wavBytes: ByteArray, sampleRate: Int, photo: Bitmap?): List<MediaPayload> {
-    val payloads = mutableListOf(audioPayload(wavBytes, sampleRate))
+  fun buildQueryPayloads(
+      wavBytes: ByteArray,
+      sampleRate: Int,
+      photo: Bitmap?,
+      commandText: String? = null,
+  ): List<MediaPayload> {
+    val payloads = mutableListOf<MediaPayload>()
+    if (!commandText.isNullOrBlank()) {
+      payloads += textPayload(commandText.trim())
+    }
+    payloads += audioPayload(wavBytes, sampleRate)
     photo?.let { payloads += imagePayload(it) }
     return payloads
+  }
+
+  private fun textPayload(text: String): MediaPayload = mediaPayload {
+    data = ByteString.copyFromUtf8(text)
+    mimeType = "text/plain"
+    metadata[CONTEXT_HINT_KEY] = CONTEXT_HINT_VALUE
   }
 
   private fun audioPayload(wavBytes: ByteArray, sampleRate: Int): MediaPayload = mediaPayload {

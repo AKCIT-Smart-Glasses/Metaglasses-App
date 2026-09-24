@@ -38,7 +38,7 @@ data class CameraUiState(
     val isRecording: Boolean = false,
     val recordingElapsedSeconds: Long = 0L,
     // Sound-in-video toggle (phone mic), locked once recording starts.
-    val includeAudioInStream: Boolean = true,
+    val includeAudioInStream: Boolean = false,
     // The capture currently shown in the shared preview/share sheet (photo or video).
     val activePreview: CapturePreview? = null,
     // Drives the confirm prompt shown before the camera-permission redirect to the Meta AI app.

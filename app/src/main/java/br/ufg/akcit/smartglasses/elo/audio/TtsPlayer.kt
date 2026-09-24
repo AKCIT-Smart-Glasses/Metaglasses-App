@@ -63,7 +63,7 @@ class TtsPlayer(context: Context) {
     }
   }
 
-  fun isPlaying(): Boolean = player?.isPlaying == true
+  fun isPlaying(): Boolean = runCatching { player?.isPlaying == true }.getOrDefault(false)
 
   fun stop() {
     onPlaybackFinished = null
@@ -72,8 +72,8 @@ class TtsPlayer(context: Context) {
 
   private fun reset() {
     player?.let { p ->
-      runCatching { if (p.isPlaying) p.stop() }
-      p.release()
+      runCatching { if (isPlaying()) p.stop() }
+      runCatching { p.release() }
     }
     player = null
     file?.delete()
