@@ -28,6 +28,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
+        android:name=".SmartGlassesApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -75,6 +76,13 @@
         <!-- Foreground service that keeps streaming/recording alive in the background -->
         <service
             android:name=".stream.StreamingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- Foreground service that keeps assistant session and notifications alive in the background -->
+        <service
+            android:name=".elo.session.EloSessionService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />

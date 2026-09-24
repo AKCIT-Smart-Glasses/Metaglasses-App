@@ -148,4 +148,57 @@
     <string name="player_pause_desc" description="Pause audio playback content description">Pause audio</string>
     <string name="player_play_desc" description="Play audio playback content description">Play audio</string>
     <string name="audio_output_info" description="Audio output boost badge">Audio via Bluetooth / Speaker (+15 dB boost active)</string>
+
+    <!-- Voice Assistant -->
+    <string name="assistant_title" description="Voice Assistant screen title">Smart Assistant</string>
+    <string name="assistant_state_ready" description="Status when assistant is ready for tap">Ready to Listen</string>
+    <string name="assistant_state_ready_desc" description="Instruction to start assistant">Tap the microphone to ask a question</string>
+    <string name="assistant_state_off" description="Status when assistant is turned off">Assistant is Off</string>
+    <string name="assistant_state_off_desc" description="Instruction to start assistant">Tap the central button to start listening</string>
+    <string name="assistant_state_initializing" description="Status when voice model is initializing">Initializing voice model…</string>
+    <string name="assistant_state_listening_wakeword" description="Status when listening for wake word">Listening… Say \"Olá Óculos\" or tap to speak</string>
+    <string name="assistant_state_listening_command" description="Status when listening for command">Listening… Speak now</string>
+    <string name="assistant_state_listening_command_desc" description="Status hint when listening">Silence will automatically submit your question</string>
+    <string name="assistant_state_processing" description="Status when processing command">Processing question…</string>
+    <string name="assistant_state_speaking" description="Status when assistant is speaking">Assistant is responding…</string>
+    <string name="assistant_state_error" description="Status when audio error occurs">Audio error</string>
+    <string name="assistant_btn_talk" description="Tap to speak button accessibility">Tap to ask question</string>
+    <string name="assistant_btn_finish_listening" description="Tap to finish speaking">Finish question</string>
+    <string name="assistant_btn_stop_speaking" description="Tap to interrupt speaking">Stop response</string>
+    <string name="assistant_btn_turn_on" description="Turn on assistant accessibility description">Turn on voice assistant</string>
+    <string name="assistant_btn_turn_off" description="Turn off assistant accessibility description">Turn off voice assistant</string>
+    <string name="assistant_hands_free_label" description="Hands-free toggle label">Hands-Free Mode</string>
+    <string name="assistant_hands_free_desc" description="Hands-free mode active description">Listening for \"Olá Óculos\"</string>
+    <string name="assistant_open_camera" description="Open camera button">Camera</string>
+    <string name="assistant_mic_glasses_active" description="Glasses microphone active badge">Glasses microphone active</string>
+    <string name="assistant_mic_phone_active" description="Phone microphone active badge">Phone microphone active</string>
+    <string name="assistant_last_command_label" description="Last recognized command label">Your question</string>
+    <string name="elo_notification_label" description="Label above the last reminder notification received">Last notification</string>
+    <string name="elo_notification_channel_name" description="Elo session notification channel name">Smart assistant</string>
+    <string name="elo_notification_channel_description" description="Elo session notification channel description">Keeps the connection to the assistant and notifications alive in the background</string>
+    <string name="elo_notification_title" description="Elo session notification title">Assistant is listening</string>
+    <string name="elo_notification_body" description="Elo session notification body">Connected — notifications will speak even with the screen off.</string>
+
+    <!-- Server Settings & Menu -->
+    <string name="settings_screen_title" description="Server Settings screen title">Server Settings</string>
+    <string name="settings_server_host_label" description="Orchestrator Host label">Orchestrator Host (IP or domain)</string>
+    <string name="settings_server_port_label" description="Orchestrator Port label">Port</string>
+    <string name="settings_save_and_connect" description="Save and connect button">Save &amp; Connect</string>
+    <string name="settings_restore_default" description="Restore default button">Restore Default</string>
+    <string name="settings_connection_status_title" description="Connection status section title">Connection Status</string>
+    <string name="settings_emulator_tip" description="Tip for emulator">Android Emulator: 10.0.2.2</string>
+    <string name="settings_physical_device_tip" description="Tip for physical device">Physical phone: PC Wi-Fi IP (e.g. 192.168.x.x)</string>
+    <string name="settings_reset_identity_title" description="Reset identity title">Device Identity</string>
+    <string name="settings_reset_identity_desc" description="Reset identity description">Clears registered device and user UUIDs on orchestrator</string>
+    <string name="settings_reset_identity_button" description="Reset identity button">Reset Identity</string>
+    <string name="settings_saved_toast" description="Settings saved toast">Server settings updated</string>
+    <string name="settings_reset_identity_toast" description="Identity reset toast">Device identity reset</string>
+    <string name="menu_camera" description="Menu item Camera">Camera</string>
+    <string name="menu_experimental_features" description="Menu item Experimental Features">Experimental Features</string>
+    <string name="menu_settings" description="Menu item Settings">Server Settings</string>
+    <string name="menu_disconnect" description="Menu item Disconnect">Disconnect Glasses</string>
+    <string name="assistant_camera_active" description="Glasses camera active badge">Glasses camera active</string>
+    <string name="assistant_camera_inactive" description="Camera paused badge">Camera paused</string>
+    <string name="assistant_camera_starting" description="Camera starting badge">Starting camera...</string>
+    <string name="assistant_camera_disconnected" description="Camera disconnected badge">Camera disconnected</string>
 </resources>
