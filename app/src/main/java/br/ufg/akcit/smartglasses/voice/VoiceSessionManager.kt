@@ -125,11 +125,15 @@ class VoiceSessionManager(
     }
 
     private fun handleServerNotification(notification: com.metaglass.proto.Notification) {
-        Log.i(tag, "Notification from backend: type=${notification.type}, text=\"${notification.text}\"")
+        val audioBytes = notification.audio.toByteArray()
+        Log.i(tag, "Notification from backend: type=${notification.type}, text=\"${notification.text}\", audioBytes=${audioBytes.size}")
         if (_uiState.value.state == VoiceSessionState.PROCESSING || _uiState.value.state == VoiceSessionState.SPEAKING) {
             if (notification.type == "holding") {
                 if (notification.text.isNotBlank()) {
                     _uiState.update { it.copy(partialTranscription = notification.text) }
+                }
+                if (audioBytes.isNotEmpty()) {
+                    container.ttsPlayer.play(audioBytes, notification.audioMimeType)
                 }
             } else if (notification.type == "answer") {
                 receivedAnswerNotification = true
@@ -140,6 +144,9 @@ class VoiceSessionManager(
                             assistantResponse = notification.text,
                         )
                     }
+                }
+                if (audioBytes.isNotEmpty()) {
+                    container.ttsPlayer.play(audioBytes, notification.audioMimeType)
                 }
             }
         }

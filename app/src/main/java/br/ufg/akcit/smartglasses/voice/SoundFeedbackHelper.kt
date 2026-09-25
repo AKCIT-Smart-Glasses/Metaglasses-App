@@ -23,13 +23,13 @@ class SoundFeedbackHelper {
 
     init {
         try {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_VOICE_CALL, 100)
+            toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         } catch (e: Exception) {
-            Log.e(tag, "Failed to initialize ToneGenerator for STREAM_VOICE_CALL", e)
+            Log.e(tag, "Failed to initialize ToneGenerator for STREAM_MUSIC", e)
             try {
-                toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, 100)
             } catch (e2: Exception) {
-                Log.e(tag, "Failed to initialize ToneGenerator for STREAM_MUSIC", e2)
+                Log.e(tag, "Failed to initialize ToneGenerator for STREAM_SYSTEM", e2)
             }
         }
     }
