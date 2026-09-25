@@ -73,6 +73,8 @@ class VoiceSessionManager(
     private val soundFeedback: SoundFeedbackHelper = SoundFeedbackHelper(),
     private val modelManager: VoskModelManager = VoskModelManager(context),
     var photoCapture: PhotoCapture? = null,
+    var onStopStream: (() -> Unit)? = null,
+    var onResumeStream: (() -> Unit)? = null,
 ) {
     private val tag = "VoiceSessionManager"
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -320,6 +322,11 @@ class VoiceSessionManager(
         listeningJob = null
         container.ttsPlayer.stop()
         cleanupAudio()
+        try {
+            onResumeStream?.invoke()
+        } catch (e: Exception) {
+            Log.w(tag, "Failed to resume camera stream on stopSession", e)
+        }
         requestDirectCommand = false
         requestFollowUpCommand = false
         requestCancelCommand = false
@@ -726,6 +733,22 @@ class VoiceSessionManager(
             val photo = photoCapture?.capturePhoto()
             Log.d(tag, "Captured photo: ${if (photo != null) "${photo.width}x${photo.height}" else "none"}")
 
+            // Release glasses hardware from camera stream mode so Bluetooth A2DP speakers can play TTS!
+            try {
+                onStopStream?.invoke()
+            } catch (e: Exception) {
+                Log.w(tag, "Failed to stop camera stream before TTS", e)
+            }
+
+            val completeTurn: (Boolean) -> Unit = { success ->
+                try {
+                    onResumeStream?.invoke()
+                } catch (e: Exception) {
+                    Log.w(tag, "Failed to resume camera stream after TTS", e)
+                }
+                onComplete(success)
+            }
+
             // 3. Assemble MediaPayload (audio/wav + optional image/jpeg)
             val payloads = PayloadBuilder.buildQueryPayloads(
                 wavBytes = wavBytes,
@@ -753,44 +776,56 @@ class VoiceSessionManager(
             val audioBytes = result.audio
             if (audioBytes.isNotEmpty()) {
                 val played = container.ttsPlayer.play(audioBytes, result.audioMimeType) {
-                    onComplete(true)
+                    completeTurn(true)
                 }
                 if (!played) {
-                    onComplete(true)
+                    completeTurn(true)
                 }
             } else {
                 // If audio was already delivered via early Notification (e.g. SPEAK_EARLY / direct triage),
                 // wait for TtsPlayer to finish playing the notification audio.
                 if (container.ttsPlayer.isPlaying()) {
                     container.ttsPlayer.onPlaybackFinished = {
-                        onComplete(true)
+                        completeTurn(true)
                     }
                 } else if (receivedAnswerNotification) {
                     container.ttsPlayer.onPlaybackFinished = {
-                        onComplete(true)
+                        completeTurn(true)
                     }
                     scope.launch {
                         delay(1500L)
                         if (!container.ttsPlayer.isPlaying()) {
-                            onComplete(true)
+                            completeTurn(true)
                         }
                     }
                 } else {
                     // Text-only mode: display response on screen for 3s then complete
                     scope.launch {
                         delay(3000L)
-                        onComplete(true)
+                        completeTurn(true)
                     }
                 }
             }
         } catch (e: CancellationException) {
             Log.d(tag, "processCommandWithOrchestrator cancelled")
+            try {
+                onResumeStream?.invoke()
+            } catch (ex: Exception) {
+                Log.w(tag, "Failed to resume camera stream on cancel", ex)
+            }
             throw e
         } catch (e: Exception) {
             Log.e(tag, "Failed to process question with orchestrator", e)
             handleProcessingError(
                 "Desculpe, tive uma instabilidade ao me conectar com o assistente. Pode tentar novamente?",
-            ) { onComplete(false) }
+            ) {
+                try {
+                    onResumeStream?.invoke()
+                } catch (ex: Exception) {
+                    Log.w(tag, "Failed to resume camera stream on error", ex)
+                }
+                onComplete(false)
+            }
         }
     }
 

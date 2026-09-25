@@ -47,6 +47,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import android.util.Log
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -138,9 +140,21 @@ fun VoiceAssistantScreen(
         }
     }
 
+    val currentAutoStreamEnabled by rememberUpdatedState(autoStreamEnabled)
+
     val sessionManager = remember {
         VoiceSessionManager(context).apply {
             photoCapture = PhotoCapture { cameraViewModel.capturePhotoForElo() }
+            onStopStream = {
+                Log.i("VoiceAssistantScreen", "Stopping camera stream to unblock glasses speakers for TTS")
+                cameraViewModel.stopStreaming()
+            }
+            onResumeStream = {
+                Log.i("VoiceAssistantScreen", "Resuming camera stream after TTS playback")
+                if (currentAutoStreamEnabled && cameraViewModel.uiState.value.isSessionActive) {
+                    cameraViewModel.startStreaming()
+                }
+            }
         }
     }
     val voiceState by sessionManager.uiState.collectAsStateWithLifecycle()
