@@ -65,9 +65,9 @@
     <string name="update_required_dat_app_message" description="DAT app update required warning">The app on your glasses needs an update before Camera Access can start.</string>
     <string name="update_required_both_message" description="Firmware and DAT app update required warning">Your glasses firmware and app need updates before Camera Access can start.</string>
 
-    <!-- Camera permission redirect -->
-    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Allow camera access</string>
-    <string name="camera_permission_redirect_message" description="Camera permission redirect message">To preview your glasses camera, you\'ll be taken to the Meta AI app to grant access, then returned here.</string>
+    <!-- Camera and Microphone permission redirect -->
+    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Allow camera and microphone access</string>
+    <string name="camera_permission_redirect_message" description="Camera permission redirect message">To use vision and voice features with your glasses, you\'ll be taken to the Meta AI app to grant access, then returned here.</string>
     <string name="camera_permission_continue" description="Camera permission continue button">Continue</string>
     <string name="camera_permission_cancel" description="Camera permission cancel button">Cancel</string>
 

@@ -27,9 +27,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import br.ufg.akcit.smartglasses.SmartGlassesApp
 import com.meta.wearable.dat.camera.Camera
 import com.meta.wearable.dat.camera.Stream
 import com.meta.wearable.dat.camera.addCamera
+import com.meta.wearable.dat.camera.types.AudioCodec
+import com.meta.wearable.dat.camera.types.AudioFrame
+import com.meta.wearable.dat.camera.types.AudioSampleRate
 import com.meta.wearable.dat.camera.types.PhotoData
 import com.meta.wearable.dat.camera.types.StreamConfiguration
 import com.meta.wearable.dat.camera.types.StreamState
@@ -115,6 +119,7 @@ class CameraViewModel(
   private var sessionStateJob: Job? = null
   private var sessionErrorJob: Job? = null
   private var videoJob: Job? = null
+  private var audioJob: Job? = null
   private var streamStateJob: Job? = null
   private var streamErrorJob: Job? = null
 
@@ -266,34 +271,46 @@ class CameraViewModel(
     _uiState.update { it.copy(isStartingStream = true) }
     viewModelScope.launch {
       try {
-        Wearables.checkPermissionStatus(Permission.CAMERA)
-            .onSuccess { status ->
-              if (status == PermissionStatus.Granted) {
-                beginStream()
-              } else {
-                _uiState.update { it.copy(showCameraPermissionRedirectConfirm = true) }
-              }
-            }
-            .onFailure { error, _ ->
-              Log.e(TAG, "Failed to check camera permission: ${error.description}")
-              wearablesViewModel.setRecentError(error.getLocalizedDescription(getApplication()))
-            }
+        val cameraStatus = Wearables.checkPermissionStatus(Permission.CAMERA).getOrNull()
+        val micStatus = Wearables.checkPermissionStatus(Permission.MICROPHONE).getOrNull()
+        if (cameraStatus == PermissionStatus.Granted) {
+          val carriesAudio = micStatus == PermissionStatus.Granted
+          beginStream(carriesAudio = carriesAudio)
+          if (!carriesAudio) {
+            _uiState.update { it.copy(showCameraPermissionRedirectConfirm = true) }
+          }
+        } else {
+          _uiState.update { it.copy(showCameraPermissionRedirectConfirm = true) }
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "Failed to check camera permission: ${e.message}")
+        beginStream(carriesAudio = false)
       } finally {
         _uiState.update { it.copy(isStartingStream = false) }
       }
     }
   }
 
-  /** Confirmed from the permission prompt: requests camera access, then starts the stream. */
+  /** Confirmed from the permission prompt: requests camera access and mic access, then starts the stream. */
   fun confirmCameraPermissionRedirect(
       requestPermission: suspend (Permission) -> PermissionStatus,
   ) {
     _uiState.update { it.copy(showCameraPermissionRedirectConfirm = false) }
-    if (!_uiState.value.isSessionActive || stream != null) return
+    if (!_uiState.value.isSessionActive) return
     viewModelScope.launch {
-      val status = requestPermission(Permission.CAMERA)
-      if (status == PermissionStatus.Granted) {
-        beginStream()
+      var cameraStatus = Wearables.checkPermissionStatus(Permission.CAMERA).getOrNull()
+      if (cameraStatus != PermissionStatus.Granted) {
+        cameraStatus = requestPermission(Permission.CAMERA)
+      }
+      if (cameraStatus == PermissionStatus.Granted) {
+        var micStatus = Wearables.checkPermissionStatus(Permission.MICROPHONE).getOrNull()
+        if (micStatus != PermissionStatus.Granted) {
+          micStatus = requestPermission(Permission.MICROPHONE)
+        }
+        val carriesAudio = micStatus == PermissionStatus.Granted
+        if (stream == null) {
+          beginStream(carriesAudio = carriesAudio)
+        }
       } else {
         wearablesViewModel.setRecentError(
             getApplication<Application>().getString(R.string.error_camera_permission_denied)
@@ -306,7 +323,7 @@ class CameraViewModel(
     _uiState.update { it.copy(showCameraPermissionRedirectConfirm = false) }
   }
 
-  private fun beginStream() {
+  private fun beginStream(carriesAudio: Boolean = true) {
     val current = session ?: return
     if (stream != null) return
     // Foreground service keeps the stream/recording alive while backgrounded.
@@ -314,6 +331,8 @@ class CameraViewModel(
     current
         .addCamera(
             StreamConfiguration(
+                audioCodec =
+                    if (carriesAudio) AudioCodec.PCM(AudioSampleRate.RATE_16000, 1) else null,
                 videoQuality = VideoQuality.MEDIUM,
                 frameRate = FRAME_RATE,
                 // Compressed HEVC so frames feed both the on-screen decoder and the passthrough
@@ -326,7 +345,7 @@ class CameraViewModel(
           val added = addedCamera.stream
           stream = added
           // Subscribe before start() so no initial transitions are missed.
-          setupStreamListeners(added)
+          setupStreamListeners(added, carriesAudio)
           _uiState.update { it.copy(streamState = StreamState.STARTING) }
           added.start().onFailure { error, _ ->
             Log.e(TAG, "Failed to start stream: ${error.description}")
@@ -351,17 +370,32 @@ class CameraViewModel(
     // The stream-state collector converges teardown when STOPPED/CLOSED arrives.
   }
 
-  private fun setupStreamListeners(stream: Stream) {
+  private fun setupStreamListeners(stream: Stream, carriesAudio: Boolean = true) {
     videoJob =
         viewModelScope.launch(frameDispatcher) {
           stream.videoStream.collect { handleVideoFrame(it) }
         }
+    if (carriesAudio) {
+      audioJob =
+          viewModelScope.launch(Dispatchers.Default) {
+            val bridge =
+                (getApplication<Application>() as? SmartGlassesApp)?.container?.glassesAudioBridge
+            stream.audioStream.collect { audioFrame ->
+              bridge?.onAudioFrame(audioFrame)
+            }
+          }
+    }
     streamStateJob = viewModelScope.launch {
       // state replays its current value (STOPPED) on subscribe, and we subscribe before start().
       var hasBeenActive = false
       stream.state.collect { state ->
         _uiState.update { it.copy(streamState = state) }
+        val bridge =
+            (getApplication<Application>() as? SmartGlassesApp)?.container?.glassesAudioBridge
         val isTerminal = state == StreamState.STOPPED || state == StreamState.CLOSED
+        if (state == StreamState.STREAMING) {
+          bridge?.setStreaming(carriesAudio)
+        }
         if (!isTerminal) {
           if (!hasBeenActive && _uiState.value.includeAudioInStream) {
             viewModelScope.launch {
@@ -377,6 +411,7 @@ class CameraViewModel(
           hasBeenActive = true
         } else if (hasBeenActive) {
           hasBeenActive = false
+          bridge?.setStreaming(false)
           onStreamTerminated()
         }
       }
@@ -456,8 +491,12 @@ class CameraViewModel(
   private fun clearStreamResources() {
     videoJob?.cancel()
     videoJob = null
+    audioJob?.cancel()
+    audioJob = null
     streamStateJob?.cancel()
     streamStateJob = null
+    val bridge = (getApplication<Application>() as? SmartGlassesApp)?.container?.glassesAudioBridge
+    bridge?.setStreaming(false)
     streamErrorJob?.cancel()
     streamErrorJob = null
     synchronized(decoderLock) {

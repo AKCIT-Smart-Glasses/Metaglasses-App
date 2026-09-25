@@ -65,9 +65,9 @@
     <string name="update_required_dat_app_message" description="DAT app update required warning">O app nos seus óculos precisa de uma atualização antes que o Camera Access possa iniciar.</string>
     <string name="update_required_both_message" description="Firmware and DAT app update required warning">O firmware e o app dos seus óculos precisam de atualizações antes que o Camera Access possa iniciar.</string>
 
-    <!-- Camera permission redirect -->
-    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Permitir acesso à câmera</string>
-    <string name="camera_permission_redirect_message" description="Camera permission redirect message">Para pré-visualizar a câmera dos seus óculos, você será direcionado ao app Meta AI para conceder acesso e depois retornará aqui.</string>
+    <!-- Camera and Microphone permission redirect -->
+    <string name="camera_permission_redirect_title" description="Camera permission redirect title">Permitir acesso à câmera e microfone</string>
+    <string name="camera_permission_redirect_message" description="Camera permission redirect message">Para usar os recursos de visão e voz com os óculos, você será direcionado ao app Meta AI para conceder acesso e depois retornará aqui.</string>
     <string name="camera_permission_continue" description="Camera permission continue button">Continuar</string>
     <string name="camera_permission_cancel" description="Camera permission cancel button">Cancelar</string>
 

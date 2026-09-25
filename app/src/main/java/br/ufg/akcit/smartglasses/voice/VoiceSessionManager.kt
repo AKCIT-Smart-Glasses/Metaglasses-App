@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.vosk.Model
 import org.vosk.Recognizer
@@ -278,11 +279,11 @@ class VoiceSessionManager(
                     container.connectionManager.connect()
                 }
 
-                // Mantém o microfone do celular ativo (MODE_NORMAL) para que o rádio dos óculos
-                // fique 100% livre para a conexão DWA (Wi-Fi Direct) e captura instantânea de fotos.
+                // Mantém o stack de áudio em MODE_NORMAL para que a reprodução de áudio (TTS)
+                // aconteça com máxima fidelidade via A2DP, sem entrar em modo de chamada telefônica (SCO).
                 audioManager.mode = AudioManager.MODE_NORMAL
                 audioManager.clearCommunicationDevice()
-                _uiState.update { it.copy(isGlassesMicActive = false) }
+                _uiState.update { it.copy(isGlassesMicActive = container.glassesAudioBridge.isStreaming.value) }
 
                 if (loadedModel == null) {
                     _uiState.update { it.copy(state = VoiceSessionState.INITIALIZING) }
@@ -327,7 +328,13 @@ class VoiceSessionManager(
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun runAudioListeningLoop(model: Model, initialCommandMode: Boolean) {
+    private fun ensurePhoneAudioRecord(): AudioRecord? {
+        if (audioRecord != null && audioRecord?.state == AudioRecord.STATE_INITIALIZED) {
+            if (audioRecord?.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+                audioRecord?.startRecording()
+            }
+            return audioRecord
+        }
         val channelConfig = AudioFormat.CHANNEL_IN_MONO
         val audioEncoding = AudioFormat.ENCODING_PCM_16BIT
         val minBufferSize = AudioRecord.getMinBufferSize(
@@ -336,23 +343,40 @@ class VoiceSessionManager(
             audioEncoding,
         )
         val bufferSize = maxOf(minBufferSize, 4096)
-
-        audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-            sampleRate.toInt(),
-            channelConfig,
-            audioEncoding,
-            bufferSize,
-        )
-
-        if (audioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-            throw IllegalStateException("AudioRecord initialization failed")
+        return try {
+            val record = AudioRecord(
+                MediaRecorder.AudioSource.VOICE_RECOGNITION,
+                sampleRate.toInt(),
+                channelConfig,
+                audioEncoding,
+                bufferSize,
+            )
+            if (record.state == AudioRecord.STATE_INITIALIZED) {
+                record.startRecording()
+                audioRecord = record
+                record
+            } else {
+                record.release()
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to initialize phone AudioRecord", e)
+            null
         }
+    }
 
-        audioRecord?.startRecording()
-        Log.d(tag, "AudioRecord started. initialCommandMode=$initialCommandMode")
+    private fun pausePhoneAudioRecord() {
+        try {
+            if (audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                audioRecord?.stop()
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error stopping phone AudioRecord", e)
+        }
+    }
 
-        val buffer = ByteArray(2048)
+    private suspend fun runAudioListeningLoop(model: Model, initialCommandMode: Boolean) {
+        val phoneBuffer = ByteArray(2048)
         val wavWriter = WavWriter(sampleRate.toInt())
 
         var inCommandMode = initialCommandMode
@@ -432,7 +456,44 @@ class VoiceSessionManager(
                 }
             }
 
-            val readBytes = audioRecord?.read(buffer, 0, buffer.size) ?: -1
+            var audioChunk: ByteArray? = null
+            var isFromGlasses = false
+
+            if (container.glassesAudioBridge.isStreaming.value) {
+                val glassesChunk = container.glassesAudioBridge.receive(timeoutMs = 150L)
+                if (glassesChunk != null) {
+                    audioChunk = glassesChunk
+                    isFromGlasses = true
+                    pausePhoneAudioRecord()
+                }
+            }
+
+            if (audioChunk == null) {
+                // Fallback to phone mic
+                val record = ensurePhoneAudioRecord()
+                if (record != null) {
+                    val read = withContext(Dispatchers.IO) {
+                        record.read(phoneBuffer, 0, phoneBuffer.size)
+                    }
+                    if (read > 0) {
+                        audioChunk = phoneBuffer.copyOf(read)
+                        isFromGlasses = false
+                    }
+                } else {
+                    delay(100L)
+                }
+            }
+
+            if (_uiState.value.isGlassesMicActive != isFromGlasses) {
+                _uiState.update { it.copy(isGlassesMicActive = isFromGlasses) }
+            }
+
+            if (audioChunk == null || audioChunk.isEmpty()) {
+                continue
+            }
+
+            val buffer = audioChunk
+            val readBytes = audioChunk.size
             if (readBytes > 0) {
                 val amplitude = calculateRmsAmplitude(buffer, readBytes)
                 _uiState.update { it.copy(amplitudeLevel = amplitude) }
@@ -799,39 +860,14 @@ class VoiceSessionManager(
         var samples = 0
         var i = 0
         while (i < readBytes - 1) {
-            val sample = (buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF)
-            sum += sample * sample
+            val sample = ((buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF)).toShort()
+            sum += sample.toDouble() * sample.toDouble()
             samples++
             i += 2
         }
         if (samples == 0) return 0f
         val rms = Math.sqrt(sum / samples)
         return (rms / 32767.0).toFloat().coerceIn(0f, 1f)
-    }
-
-    private fun setupBluetoothAudioRouting() {
-        val selectedDevice = getBluetoothAudioDeviceInfo()
-        if (selectedDevice != null) {
-            audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
-            val success = audioManager.setCommunicationDevice(selectedDevice)
-            Log.d(tag, "Bluetooth audio communication device set: $success (${selectedDevice.productName})")
-            _uiState.update { it.copy(isGlassesMicActive = true) }
-        } else {
-            Log.w(tag, "No Bluetooth SCO device found, using internal microphone")
-            _uiState.update { it.copy(isGlassesMicActive = false) }
-        }
-    }
-
-    private fun getBluetoothAudioDeviceInfo(): AudioDeviceInfo? {
-        val devices = audioManager.availableCommunicationDevices
-        for (device in devices) {
-            if (device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                device.type == AudioDeviceInfo.TYPE_BLE_HEADSET
-            ) {
-                return device
-            }
-        }
-        return null
     }
 
     private fun cleanupAudio() {

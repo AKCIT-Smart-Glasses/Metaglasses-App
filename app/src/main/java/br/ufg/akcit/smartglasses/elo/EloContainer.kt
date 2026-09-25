@@ -9,6 +9,7 @@
 package br.ufg.akcit.smartglasses.elo
 
 import android.app.Application
+import br.ufg.akcit.smartglasses.elo.audio.GlassesAudioBridge
 import br.ufg.akcit.smartglasses.elo.audio.TtsPlayer
 import br.ufg.akcit.smartglasses.elo.grpc.AgentApi
 import br.ufg.akcit.smartglasses.elo.grpc.ContextApi
@@ -38,4 +39,5 @@ class EloContainer(application: Application) {
   val connectionManager = EloConnectionManager(sessionApi, identityStore, appScope)
   val notificationSubscriber = NotificationSubscriber(notificationsApi, appScope)
   val ttsPlayer = TtsPlayer(application)
+  val glassesAudioBridge = GlassesAudioBridge()
 }
